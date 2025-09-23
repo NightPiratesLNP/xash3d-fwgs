@@ -78,13 +78,14 @@ CVAR_DEFINE_AUTO( cl_lw, "1", FCVAR_ARCHIVE|FCVAR_USERINFO, "enable client weapo
 CVAR_DEFINE_AUTO( cl_charset, "utf-8", FCVAR_ARCHIVE, "1-byte charset to use (iconv style)" );
 CVAR_DEFINE_AUTO( cl_trace_consistency, "0", FCVAR_ARCHIVE, "enable consistency info tracing (good for developers)" );
 CVAR_DEFINE_AUTO( cl_trace_stufftext, "0", FCVAR_ARCHIVE, "enable stufftext (server-to-client console commands) tracing (good for developers)" );
-CVAR_DEFINE_AUTO( cl_trace_messages, "0", FCVAR_ARCHIVE|FCVAR_ARCHIVE, "enable message names tracing (good for developers)" );
-CVAR_DEFINE_AUTO( cl_trace_events, "0", FCVAR_ARCHIVE|FCVAR_ARCHIVE, "enable events tracing (good for developers)" );
+CVAR_DEFINE_AUTO( cl_trace_messages, "0", FCVAR_ARCHIVE, "enable message names tracing (good for developers)" );
+CVAR_DEFINE_AUTO( cl_trace_events, "0", FCVAR_ARCHIVE, "enable events tracing (good for developers)" );
 static CVAR_DEFINE_AUTO( cl_nat, "0", 0, "show servers running under NAT" );
 CVAR_DEFINE_AUTO( hud_utf8, "0", FCVAR_ARCHIVE, "Use utf-8 encoding for hud text" );
 CVAR_DEFINE_AUTO( ui_renderworld, "0", FCVAR_ARCHIVE, "render world when UI is visible" );
 static CVAR_DEFINE_AUTO( cl_maxframetime, "0", 0, "set deadline timer for client rendering to catch freezes" );
 CVAR_DEFINE_AUTO( cl_fixmodelinterpolationartifacts, "1", 0, "try to fix up models interpolation on a moving platforms (monsters on trains for example)" );
+CVAR_DEFINE_AUTO( cl_screenfade, "1", FCVAR_ARCHIVE|FCVAR_PROTECTED, "toggle screenfade" );
 
 //
 // userinfo
@@ -97,6 +98,7 @@ static CVAR_DEFINE_AUTO( bottomcolor, "0", FCVAR_USERINFO|FCVAR_ARCHIVE|FCVAR_FI
 CVAR_DEFINE_AUTO( rate, "25000", FCVAR_USERINFO|FCVAR_ARCHIVE|FCVAR_FILTERABLE, "player network rate" );
 
 static CVAR_DEFINE_AUTO( cl_ticket_generator, "revemu2013", FCVAR_ARCHIVE|FCVAR_PROTECTED, "you wouldn't steal a car" );
+static CVAR_DEFINE_AUTO( cl_ticket_custom, "", FCVAR_ARCHIVE|FCVAR_PROTECTED, "you wouldn't steal a cax" );
 static CVAR_DEFINE_AUTO( cl_advertise_engine_in_name, "0", FCVAR_PROTECTED|FCVAR_READ_ONLY, "unnecessary cvar" );
 
 client_t		cl;
@@ -1012,6 +1014,14 @@ static void CL_WriteSteamTicket( sizebuf_t *send )
 	char buf[768] = { 0 }; // setti and steamemu return 768
 	int i = sizeof( buf );
 
+	if (cl_ticket_custom.string && *cl_ticket_custom.string)
+	{
+		i = GenerateRevEmu( buf, cl_ticket_custom.value );
+		MSG_WriteBytes( send, buf, i );
+		return;
+    	}
+	else
+	{
 	if( !Q_strcmp( cl_ticket_generator.string, "null" ))
 	{
 		MSG_WriteBytes( send, buf, 512 ); // specifically 512 bytes of zeros
@@ -1035,8 +1045,8 @@ static void CL_WriteSteamTicket( sizebuf_t *send )
 	// RevEmu2013: pTicket[1] = revHash (low), pTicket[5] = 0x01100001 (high)
 	*(uint32_t*)cls.steamid = LittleLong( ((uint32_t*)buf)[1] );
 	*(uint32_t*)(cls.steamid + 4) = LittleLong( ((uint32_t*)buf)[5] );
+	}
 }
-
 /*
 =======================
 CL_SendConnectPacket
@@ -3421,6 +3431,8 @@ static void CL_InitLocal( void )
 	Cvar_RegisterVariable( &ui_renderworld );
 	Cvar_RegisterVariable( &cl_maxframetime );
 	Cvar_RegisterVariable( &cl_fixmodelinterpolationartifacts );
+	Cvar_RegisterVariable( &cl_screenfade );
+	Cvar_RegisterVariable( &cl_ticket_custom );
 
 	// server commands
 	Cmd_AddCommand ("noclip", NULL, "enable or disable no clipping mode" );
