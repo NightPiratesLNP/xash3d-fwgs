@@ -2166,14 +2166,14 @@ Set screen fade
 */
 static void CL_ParseScreenFade( sizebuf_t *msg )
 {
+	float           duration, holdTime;
+    screenfade_t    *sf = &clgame.fade;
+    float           flScale;
+
     if ( !cl_screenfade.value )
     {
         return;
     }
-
-    float           duration, holdTime;
-    screenfade_t    *sf = &clgame.fade;
-    float           flScale;
 
     duration = (float)MSG_ReadWord( msg );
     holdTime = (float)MSG_ReadWord( msg );
