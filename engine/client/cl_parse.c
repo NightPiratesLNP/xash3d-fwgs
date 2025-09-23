@@ -2166,7 +2166,7 @@ Set screen fade
 */
 static void CL_ParseScreenFade( sizebuf_t *msg )
 {
-    if ( !cl_screenfade->value )
+    if ( !cl_screenfade.value )
     {
         return;
     }
