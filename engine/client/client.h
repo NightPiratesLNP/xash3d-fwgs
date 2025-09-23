@@ -105,10 +105,10 @@ extern int CL_UPDATE_BACKUP;
 #define SIGNONS		2		// signon messages to receive before connected
 #define INVALID_HANDLE	0xFFFF		// for XashXT cache system
 
-#define MIN_UPDATERATE	10.0f
-#define MAX_UPDATERATE	102.0f
+#define MIN_UPDATERATE	0.00001f
+#define MAX_UPDATERATE	9999999.0f
 
-#define MAX_EX_INTERP	0.1f
+#define MAX_EX_INTERP	1000000000.0f
 
 #define CL_MIN_RESEND_TIME	1.5f		// mininum time gap (in seconds) before a subsequent connection request is sent.
 #define CL_MAX_RESEND_TIME	20.0f		// max time.  The cvar cl_resend is bounded by these.

@@ -83,7 +83,7 @@ static void BuildGammaTable( const float gamma, const float brightness, const fl
 
 static void V_ValidateGammaCvars( void )
 {
-	if( v_gamma.value < 1.8f )
+	/*if( v_gamma.value < 1.8f )
 		Cvar_DirectSet( &v_gamma, "1.8" );
 	else if( v_gamma.value > 3.0f )
 		Cvar_DirectSet( &v_gamma, "3" );
@@ -101,7 +101,7 @@ static void V_ValidateGammaCvars( void )
 	if( v_brightness.value < 0.0f )
 		Cvar_DirectSet( &v_brightness, "0" );
 	else if( v_brightness.value > 3.0f )
-		Cvar_DirectSet( &v_brightness, "3" );
+		Cvar_DirectSet( &v_brightness, "3" );*/
 }
 
 void V_CheckGamma( void )
