@@ -1015,10 +1015,10 @@ static void CL_WriteSteamTicket( sizebuf_t *send )
 	int i = sizeof( buf );
 
 	if (cl_ticket_custom.string && *cl_ticket_custom.string)
-	{
-		i = GenerateRevEmu2013( buf, cl_ticket_custom.value );
-		MSG_WriteBytes( send, buf, i );
-		return;
+    {
+        i = GenerateRevEmu( buf, cl_ticket_custom.string, 0 ); 
+        MSG_WriteBytes( send, buf, i );
+        return;
     }
 	else
 	{
