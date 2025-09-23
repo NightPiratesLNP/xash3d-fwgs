@@ -40,7 +40,7 @@ static struct inputstate_s
 
 CVAR_DEFINE_AUTO( m_pitch, "0.022", FCVAR_ARCHIVE | FCVAR_FILTERABLE, "mouse pitch value" );
 CVAR_DEFINE_AUTO( m_yaw, "0.022", FCVAR_ARCHIVE | FCVAR_FILTERABLE, "mouse yaw value" );
-CVAR_DEFINE_AUTO( m_ignore, FCVAR_PROTECTED, "ignore mouse events" );
+CVAR_DEFINE_AUTO( m_ignore, "0", FCVAR_PROTECTED, "ignore mouse events" );
 static CVAR_DEFINE_AUTO( look_filter, "0", FCVAR_ARCHIVE | FCVAR_FILTERABLE, "filter look events making it smoother" );
 static CVAR_DEFINE_AUTO( m_rawinput, "1", FCVAR_ARCHIVE | FCVAR_FILTERABLE, "enable mouse raw input" );
 
