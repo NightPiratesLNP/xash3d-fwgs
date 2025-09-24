@@ -2170,11 +2170,6 @@ static void CL_ParseScreenFade( sizebuf_t *msg )
     screenfade_t    *sf = &clgame.fade;
     float           flScale;
 
-    if ( !cl_screenfade.value )
-    {
-        return;
-    }
-
     duration = (float)MSG_ReadWord( msg );
     holdTime = (float)MSG_ReadWord( msg );
     sf->fadeFlags = MSG_ReadShort( msg );
@@ -2188,7 +2183,10 @@ static void CL_ParseScreenFade( sizebuf_t *msg )
     sf->fadeEnd = duration * flScale;
     sf->fadeReset = holdTime * flScale;
 
-    // calc fade speed
+    if ( !cl_screenfade.value )
+    {
+        sf->fadealpha = 0;
+    }
     if( duration > 0 )
     {
         if( FBitSet( sf->fadeFlags, FFADE_OUT ))
