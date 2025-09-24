@@ -90,7 +90,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     private fun isGameDirectory(dirName: String): Boolean {
         val gameDirs = arrayOf("valve", "cstrike", "czero", "gearbox", "bshift", "dmc", "hldms", "tfc", "wanted")
-        return gameDirs.contains(dirName.lowercase()) // lowercase() kullanıldı
+        return gameDirs.contains(dirName.lowercase())
     }
 
     fun setSelectedGame(game: Game) {
