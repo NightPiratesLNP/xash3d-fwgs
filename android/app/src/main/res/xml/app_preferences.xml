@@ -18,10 +18,10 @@
             
     </PreferenceCategory>
     
-    <PreferenceCategory app:title="@string/interface_settings">
-        <SwitchPreferenceCompat
-            app:key="use_icons"
-            app:title="@string/preferences_use_icons" />
-    </PreferenceCategory>
+    <SwitchPreferenceCompat
+		app:key="use_icons"
+		app:layout="@layout/switch_preference"
+		app:title="@string/preferences_use_icons" />
+    </PreferenceScreen>
     
 </PreferenceScreen>
