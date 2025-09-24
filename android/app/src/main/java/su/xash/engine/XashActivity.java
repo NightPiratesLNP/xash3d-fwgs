@@ -152,49 +152,45 @@ public class XashActivity extends SDLActivity {
 	// TODO: REMOVE LATER, temporary launchers support?
 	@Override
 	protected String[] getArguments() {
-		String gamedir = getIntent().getStringExtra("gamedir");
-		if (gamedir == null) gamedir = "valve";
-		nativeSetenv("XASH3D_GAME", gamedir);
+	    String gamedir = getIntent().getStringExtra("gamedir");
+	    if (gamedir == null) gamedir = "valve";
+	    nativeSetenv("XASH3D_GAME", gamedir);
 
-		String gamelibdir = getIntent().getStringExtra("gamelibdir");
-		if (gamelibdir != null) nativeSetenv("XASH3D_GAMELIBDIR", gamelibdir);
+	    String gamelibdir = getIntent().getStringExtra("gamelibdir");
+	    if (gamelibdir != null) nativeSetenv("XASH3D_GAMELIBDIR", gamelibdir);
 
-		String pakfile = getIntent().getStringExtra("pakfile");
-		if (pakfile != null) nativeSetenv("XASH3D_EXTRAS_PAK2", pakfile);
+	    String pakfile = getIntent().getStringExtra("pakfile");
+	    if (pakfile != null) nativeSetenv("XASH3D_EXTRAS_PAK2", pakfile);
 
-		String basedir = getIntent().getStringExtra("basedir");
-		if (basedir != null) {
-			nativeSetenv("XASH3D_BASEDIR", basedir);
-		} else {
-			String rootPath = getStoragePath();
-			nativeSetenv("XASH3D_BASEDIR", rootPath);
-			Log.d(TAG, "Using storage path: " + rootPath);
-		}
+	    String basedir = getIntent().getStringExtra("basedir");
+	    if (basedir != null) {
+	        nativeSetenv("XASH3D_BASEDIR", basedir);
+	    } else {
+	        // nativeSetenv("XASH3D_BASEDIR", rootPath);
+	    }
 
-		mUseVolumeKeys = getIntent().getBooleanExtra("usevolume", false);
-		mPackageName = getIntent().getStringExtra("package");
+	    mUseVolumeKeys = getIntent().getBooleanExtra("usevolume", false);
+	    mPackageName = getIntent().getStringExtra("package");
 
-		String[] env = getIntent().getStringArrayExtra("env");
-		if (env != null) {
-			for (int i = 0; i < env.length; i += 2)
-				nativeSetenv(env[i], env[i + 1]);
-		}
+	    String[] env = getIntent().getStringArrayExtra("env");
+	    if (env != null) {
+	        for (int i = 0; i < env.length; i += 2)
+	            nativeSetenv(env[i], env[i + 1]);
+	    }
 
-		String argv = getIntent().getStringExtra("argv");
-		if (argv == null) argv = "-console -log";
+	    String argv = getIntent().getStringExtra("argv");
+	    if (argv == null) argv = "-console -log";
 
-		// stupid check but should be enough
-		if (argv.indexOf(" -dll ") < 0 && gamelibdir == null) {
-			// mobile_hacks hlsdk-portable branch allows us to have few more mods
-			final List<String> mobile_hacks_gamedirs = Arrays.asList(new String[]{
-				"aom", "bdlands", "biglolly", "bshift", "caseclosed",
-				"hl_urbicide", "induction", "redempt", "secret",
-				"sewer_beta", "tot", "vendetta" });
+	    // stupid check but should be enough
+	    if (argv.indexOf(" -dll ") < 0 && gamelibdir == null) {
+	        // mobile_hacks hlsdk-portable branch allows us to have few more mods
+	        final List<String> mobile_hacks_gamedirs = Arrays.asList(new String[]{
+	            "aom", "bdlands", "biglolly", "bshift", "caseclosed",
+	            "hl_urbicide", "induction", "redempt", "secret",
+	            "sewer_beta", "tot", "vendetta" });
 
-			if (mobile_hacks_gamedirs.contains(gamedir))
-				argv += " -dll @hl";
-		}
-
-		return argv.split(" ");
+	        if (mobile_hacks_gamedirs.contains(gamedir))
+	            argv += " -dll @hl";
 	}
+	return argv.split(" ");
 }

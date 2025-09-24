@@ -3,7 +3,6 @@ package su.xash.engine.ui.library
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
 import android.os.Environment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -27,17 +26,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     private val appPreferences: SharedPreferences =
         application.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
-    
-    private val defaultPreferences: SharedPreferences =
-        PreferenceManager.getDefaultSharedPreferences(application)
 
-    // Orijinal reloadGames metodu (geriye uyumluluk için)
     fun reloadGames(ctx: Context) {
-        reloadGames(ctx, getStoragePath())
-    }
-
-    // Yeni reloadGames metodu (path parametresi ile)
-    fun reloadGames(ctx: Context, path: String? = null) {
         if (isReloading.value == true) {
             return
         }
@@ -45,26 +35,35 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val rootPath = path ?: getStoragePath()
-                val root = File(rootPath)
-
-                _installedGames.postValue(Game.getGames(ctx, root))
+                // Önce Android/data dizinini kontrol et
+                val internalPath = ctx.getExternalFilesDir(null)?.absolutePath
+                val internalDir = File(internalPath ?: "")
+                
+                // Sonra /xash dizinini kontrol et
+                val externalPath = Environment.getExternalStorageDirectory().absolutePath + "/xash"
+                val externalDir = File(externalPath)
+                
+                val games = mutableListOf<Game>()
+                
+                // Önce internal storage'daki oyunları yükle
+                if (internalDir.exists() && internalDir.isDirectory) {
+                    games.addAll(Game.getGames(ctx, internalDir))
+                }
+                
+                // Sonra external storage'daki oyunları yükle (çakışmaları önlemek için)
+                if (externalDir.exists() && externalDir.isDirectory) {
+                    val externalGames = Game.getGames(ctx, externalDir)
+                    // Sadece internal'de olmayan oyunları ekle
+                    externalGames.forEach { externalGame ->
+                        if (!games.any { it.basedir.name == externalGame.basedir.name }) {
+                            games.add(externalGame)
+                        }
+                    }
+                }
+                
+                _installedGames.postValue(games)
                 _isReloading.postValue(false)
             }
-        }
-    }
-
-    // Storage path'ini almak için yardımcı fonksiyon
-    private fun getStoragePath(): String {
-        val useInternalStorage = defaultPreferences.getBoolean("storage_toggle", false)
-        
-        return if (useInternalStorage) {
-            // Android/data path'i kullan
-            getApplication<Application>().getExternalFilesDir(null)?.absolutePath 
-                ?: Environment.getExternalStorageDirectory().absolutePath + "/Android/data/su.xash.engine.test/files"
-        } else {
-            // External xash klasörü kullan
-            Environment.getExternalStorageDirectory().absolutePath + "/xash"
         }
     }
 
