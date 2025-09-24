@@ -3,6 +3,7 @@ package su.xash.engine.ui.library
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.preference.PreferenceManager
 import android.os.Environment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -24,36 +25,32 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     val selectedItem: LiveData<Game> get() = _selectedItem
     private val _selectedItem = MutableLiveData<Game>()
 
-    private val appPreferences: SharedPreferences =
-        application.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+    private val defaultPreferences: SharedPreferences =
+        PreferenceManager.getDefaultSharedPreferences(application)
 
     fun reloadGames(ctx: Context) {
-        if (isReloading.value == true) {
-            return
-        }
+        if (isReloading.value == true) return
         _isReloading.value = true
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                // Önce Android/data dizinini kontrol et
-                val internalPath = ctx.getExternalFilesDir(null)?.absolutePath
-                val internalDir = File(internalPath ?: "")
-                
-                // Sonra /xash dizinini kontrol et
-                val externalPath = Environment.getExternalStorageDirectory().absolutePath + "/xash"
-                val externalDir = File(externalPath)
-                
                 val games = mutableListOf<Game>()
                 
-                // Önce internal storage'daki oyunları yükle
+                val internalPath = ctx.getExternalFilesDir(null)?.absolutePath
+                val externalPath = Environment.getExternalStorageDirectory().absolutePath + "/xash"
+                
+                val internalDir = File(internalPath ?: "")
+                val externalDir = File(externalPath)
+                
+                fixGamePermissions(internalDir)
+                fixGamePermissions(externalDir)
+                
                 if (internalDir.exists() && internalDir.isDirectory) {
                     games.addAll(Game.getGames(ctx, internalDir))
                 }
                 
-                // Sonra external storage'daki oyunları yükle (çakışmaları önlemek için)
                 if (externalDir.exists() && externalDir.isDirectory) {
                     val externalGames = Game.getGames(ctx, externalDir)
-                    // Sadece internal'de olmayan oyunları ekle
                     externalGames.forEach { externalGame ->
                         if (!games.any { it.basedir.name == externalGame.basedir.name }) {
                             games.add(externalGame)
@@ -65,6 +62,35 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 _isReloading.postValue(false)
             }
         }
+    }
+
+    private fun fixGamePermissions(dir: File) {
+        try {
+            if (dir.exists() && dir.isDirectory) {
+                val gameDirs = dir.listFiles { file -> 
+                    file.isDirectory && isGameDirectory(file.name)
+                }
+                
+                gameDirs?.forEach { gameDir ->
+                    gameDir.setReadable(true, false)
+                    gameDir.setWritable(true, false)
+                    gameDir.setExecutable(true, false)
+                    
+                    gameDir.listFiles()?.forEach { file ->
+                        file.setReadable(true, false)
+                        file.setWritable(true, false)
+                        file.setExecutable(true, false)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun isGameDirectory(dirName: String): Boolean {
+        val gameDirs = arrayOf("valve", "cstrike", "czero", "gearbox", "bshift", "dmc", "hldms", "tfc", "wanted")
+        return gameDirs.contains(dirName.toLowerCase())
     }
 
     fun setSelectedGame(game: Game) {
