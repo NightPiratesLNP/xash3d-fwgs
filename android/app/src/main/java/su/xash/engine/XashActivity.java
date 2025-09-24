@@ -6,6 +6,8 @@ import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
+import android.content.SharedPreferences;
 import android.provider.Settings.Secure;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -22,10 +24,13 @@ public class XashActivity extends SDLActivity {
 	private boolean mUseVolumeKeys;
 	private String mPackageName;
 	private static final String TAG = "XashActivity";
+	private SharedPreferences mPreferences;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -120,6 +125,30 @@ public class XashActivity extends SDLActivity {
 		return getWindow().superDispatchKeyEvent(event);
 	}
 
+	public String getStoragePath() {
+		boolean useInternalStorage = mPreferences.getBoolean("storage_toggle", false);
+		
+		if (useInternalStorage) {
+			return getExternalFilesDir(null).getAbsolutePath();
+		} else {
+			return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
+		}
+	}
+
+	public String getStorageSummary() {
+		boolean useInternalStorage = mPreferences.getBoolean("storage_toggle", false);
+		
+		if (useInternalStorage) {
+			return "Internal Storage\n" + getExternalFilesDir(null).getAbsolutePath();
+		} else {
+			return "External Storage\n" + Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
+		}
+	}
+
+	public boolean isUsingInternalStorage() {
+		return mPreferences.getBoolean("storage_toggle", false);
+	}
+
 	// TODO: REMOVE LATER, temporary launchers support?
 	@Override
 	protected String[] getArguments() {
@@ -137,8 +166,9 @@ public class XashActivity extends SDLActivity {
 		if (basedir != null) {
 			nativeSetenv("XASH3D_BASEDIR", basedir);
 		} else {
-			String rootPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
+			String rootPath = getStoragePath();
 			nativeSetenv("XASH3D_BASEDIR", rootPath);
+			Log.d(TAG, "Using storage path: " + rootPath);
 		}
 
 		mUseVolumeKeys = getIntent().getBooleanExtra("usevolume", false);
