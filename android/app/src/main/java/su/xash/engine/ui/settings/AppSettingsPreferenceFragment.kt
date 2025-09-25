@@ -1,7 +1,8 @@
 package su.xash.engine.ui.settings
 
+import android.app.AlertDialog
 import android.os.Bundle
-import androidx.preference.EditTextPreference
+import android.widget.EditText
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import su.xash.engine.MainActivity
@@ -14,7 +15,7 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
 
     private lateinit var preferences: SharedPreferences
     private lateinit var gamePathPreference: Preference
-    private lateinit var globalArgsPreference: EditTextPreference
+    private lateinit var globalArgsPreference: Preference
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.sharedPreferencesName = "app_preferences"
@@ -25,6 +26,11 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
 
         gamePathPreference = findPreference("game_path") ?: return
         globalArgsPreference = findPreference("global_arguments") ?: return
+
+        globalArgsPreference.setOnPreferenceClickListener {
+            showGlobalArgumentsDialog()
+            true
+        }
 
         updateGamePathSummary()
         updateGlobalArgsSummary()
@@ -61,8 +67,30 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
         } else {
             globalArgsPreference.summary = globalArgs
         }
+    }
+
+    private fun showGlobalArgumentsDialog() {
+        val currentArgs = preferences.getString("global_arguments", "") ?: ""
         
-        globalArgsPreference.text = globalArgs
+        val editText = EditText(requireContext())
+        editText.setText(currentArgs)
+        editText.hint = "e.g., -dev -log"
+        
+        AlertDialog.Builder(requireContext())
+            .setTitle("Global Command-line Arguments")
+            .setMessage("These arguments will be added to all games")
+            .setView(editText)
+            .setPositiveButton("OK") { dialog, which ->
+                val newArgs = editText.text.toString().trim()
+                preferences.edit().putString("global_arguments", newArgs).commit()
+                updateGlobalArgsSummary()
+            }
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Clear") { dialog, which ->
+                preferences.edit().putString("global_arguments", "").commit()
+                updateGlobalArgsSummary()
+            }
+            .show()
     }
 
     override fun onResume() {
