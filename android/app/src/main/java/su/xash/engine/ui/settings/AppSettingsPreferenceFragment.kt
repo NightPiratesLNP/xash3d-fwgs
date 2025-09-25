@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import su.xash.engine.MainActivity
+import su.xash.engine.R
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
 
