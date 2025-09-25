@@ -17,13 +17,10 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/global_settings">
-        <EditTextPreference
+        <Preference
             app:key="global_arguments"
             app:title="@string/global_command_line"
-            app:summary="No global arguments set"
-            app:dialogTitle="Enter global command-line arguments"
-            app:dialogMessage="These arguments will be added to all games"
-            app:defaultValue="" />
+            app:summary="set any arguments" />
     </PreferenceCategory>
 
 </PreferenceScreen>
