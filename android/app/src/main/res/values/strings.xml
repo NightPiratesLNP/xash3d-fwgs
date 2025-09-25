@@ -24,4 +24,8 @@
     <string name="using_external_storage">Using: External Storage (xash folder)</string>
     <string name="internal_storage_path">Internal Storage</string>
     <string name="external_storage_path">External Storage</string>
+	<string name="global_settings">Global Settings</string>
+    <string name="global_command_line">Global Command-line Arguments</string>
+    <string name="global_command_line_summary">Always applied to all games</string>
+    <string name="global_command_line_dialog">Enter command-line arguments</string>
 </resources>
