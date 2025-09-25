@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    
+
     <PreferenceCategory app:title="@string/storage_settings">
-        
         <Preference
             app:key="game_path"
             app:title="@string/game_data_location"
@@ -14,6 +13,17 @@
             app:title="@string/toggle_storage_location"
             app:summaryOn="@string/using_internal_storage"
             app:summaryOff="@string/using_external_storage"
-            app:defaultValue="false" />    
+            app:defaultValue="false" />
     </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/global_settings">
+        <EditTextPreference
+            app:key="global_arguments"
+            app:title="@string/global_command_line"
+            app:summary="@string/global_command_line_summary"
+            app:dialogTitle="@string/global_command_line_dialog"
+            app:defaultValue=""
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
 </PreferenceScreen>
