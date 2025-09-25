@@ -17,13 +17,10 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/global_settings">
-        <EditTextPreference
+        <Preference
             app:key="global_arguments"
             app:title="@string/global_command_line"
-            app:summary="@string/global_command_line_summary"
-            app:dialogTitle="@string/global_command_line_dialog"
-            app:defaultValue=""
-            app:useSimpleSummaryProvider="true" />
+            app:summary="No global arguments set" />
     </PreferenceCategory>
 
 </PreferenceScreen>
