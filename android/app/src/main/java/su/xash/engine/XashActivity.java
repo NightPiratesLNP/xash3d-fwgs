@@ -113,6 +113,26 @@ public class XashActivity extends SDLActivity {
         return getWindow().superDispatchKeyEvent(event);
     }
 
+    private String getGlobalArguments() {
+        String globalArgs = mPreferences.getString("global_arguments", "");
+        if (globalArgs != null && !globalArgs.trim().isEmpty()) {
+            return globalArgs.trim();
+        }
+        return "";
+    }
+
+    private String combineArguments(String originalArgs, String globalArgs) {
+        if (globalArgs.isEmpty()) {
+            return originalArgs;
+        }
+        
+        if (originalArgs == null || originalArgs.trim().isEmpty()) {
+            return globalArgs;
+        }
+        
+        return originalArgs.trim() + " " + globalArgs;
+    }
+
     private String findBestBasedir(String gamedir) {
         File internalDir = new File(getExternalFilesDir(null).getAbsolutePath() + "/" + gamedir);
         if (internalDir.exists() && internalDir.isDirectory()) {
@@ -165,6 +185,12 @@ public class XashActivity extends SDLActivity {
         String argv = getIntent().getStringExtra("argv");
         if (argv == null) argv = "-console -log";
 
+        String globalArgs = getGlobalArguments();
+        if (!globalArgs.isEmpty()) {
+            Log.d(TAG, "Global arguments found: " + globalArgs);
+            argv = combineArguments(argv, globalArgs);
+        }
+
         if (!argv.contains("-game") && !gamedir.equals("valve")) {
             argv += " -game " + gamedir;
             Log.d(TAG, "Added -game parameter to argv: " + argv);
@@ -180,6 +206,7 @@ public class XashActivity extends SDLActivity {
                 argv += " -dll @hl";
         }
 
+        Log.d(TAG, "Final argv: " + argv);
         return argv.split(" ");
     }
 }
