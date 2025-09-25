@@ -113,76 +113,39 @@ public class XashActivity extends SDLActivity {
         return getWindow().superDispatchKeyEvent(event);
     }
 
-    private void debugIntentParameters() {
-        Log.d(TAG, "=== INTENT PARAMETERS ===");
-        Log.d(TAG, "gamedir: " + getIntent().getStringExtra("gamedir"));
-        Log.d(TAG, "gamelibdir: " + getIntent().getStringExtra("gamelibdir"));
-        Log.d(TAG, "basedir: " + getIntent().getStringExtra("basedir"));
-        Log.d(TAG, "pakfile: " + getIntent().getStringExtra("pakfile"));
-        Log.d(TAG, "argv: " + getIntent().getStringExtra("argv"));
-        
-        String[] env = getIntent().getStringArrayExtra("env");
-        if (env != null) {
-            for (int i = 0; i < env.length; i += 2) {
-                Log.d(TAG, "env[" + env[i] + "] = " + env[i + 1]);
-            }
-        }
-        Log.d(TAG, "=== END PARAMETERS ===");
-    }
-
-    private String findGameDirectory(String gameDir) {
-        File externalDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash/" + gameDir);
-        if (externalDir.exists() && externalDir.isDirectory()) {
-            Log.d(TAG, "Found game directory in external storage: " + externalDir.getAbsolutePath());
-            fixGameDirectoryPermissions(externalDir.getAbsolutePath());
-            return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
-        }
-        
-        File internalDir = new File(getExternalFilesDir(null).getAbsolutePath() + "/" + gameDir);
+    private String findBestBasedir(String gamedir) {
+        File internalDir = new File(getExternalFilesDir(null).getAbsolutePath() + "/" + gamedir);
         if (internalDir.exists() && internalDir.isDirectory()) {
-            Log.d(TAG, "Found game directory in internal storage: " + internalDir.getAbsolutePath());
-            fixGameDirectoryPermissions(internalDir.getAbsolutePath());
+            Log.d(TAG, "Game found in internal storage: " + internalDir.getAbsolutePath());
             return getExternalFilesDir(null).getAbsolutePath();
         }
         
-        Log.d(TAG, "Game directory not found, using external storage as default");
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
-    }
-
-    private void fixGameDirectoryPermissions(String gameDirPath) {
-        try {
-            File gameDirectory = new File(gameDirPath);
-            if (gameDirectory.exists() && gameDirectory.isDirectory()) {
-                gameDirectory.setReadable(true, false);
-                gameDirectory.setWritable(true, false);
-                gameDirectory.setExecutable(true, false);
-                
-                File[] files = gameDirectory.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        file.setReadable(true, false);
-                        file.setWritable(true, false);
-                        file.setExecutable(true, false);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error fixing permissions for: " + gameDirPath, e);
+        File externalDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash/" + gamedir);
+        if (externalDir.exists() && externalDir.isDirectory()) {
+            Log.d(TAG, "Game found in external storage: " + externalDir.getAbsolutePath());
+            return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
+        }
+        
+        boolean useInternalStorage = mPreferences.getBoolean("storage_toggle", false);
+        if (useInternalStorage) {
+            Log.d(TAG, "Game not found, using internal storage as default");
+            return getExternalFilesDir(null).getAbsolutePath();
+        } else {
+            Log.d(TAG, "Game not found, using external storage as default");
+            return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
         }
     }
 
     @Override
     protected String[] getArguments() {
-        debugIntentParameters();
-        
         String gamedir = getIntent().getStringExtra("gamedir");
         if (gamedir == null) gamedir = "valve";
         
-        String basedir = findGameDirectory(gamedir);
+        String basedir = findBestBasedir(gamedir);
+        nativeSetenv("XASH3D_BASEDIR", basedir);
+        nativeSetenv("XASH3D_GAME", gamedir);
         
-        // nativeSetenv("XASH3D_BASEDIR", basedir);
-        
-        Log.d(TAG, "Final settings - gamedir: " + gamedir + ", basedir: " + basedir);
+        Log.d(TAG, "Using basedir: " + basedir + " for game: " + gamedir);
 
         String gamelibdir = getIntent().getStringExtra("gamelibdir");
         if (gamelibdir != null) nativeSetenv("XASH3D_GAMELIBDIR", gamelibdir);
@@ -201,13 +164,7 @@ public class XashActivity extends SDLActivity {
 
         String argv = getIntent().getStringExtra("argv");
         if (argv == null) argv = "-console -log";
-        
-        if (argv.contains("-game") && !argv.contains("-game valve")) {
-            Log.d(TAG, "Found -game parameter in argv: " + argv);
-        }
 
-        nativeSetenv("XASH3D_GAME", gamedir);
-        
         if (!argv.contains("-game") && !gamedir.equals("valve")) {
             argv += " -game " + gamedir;
             Log.d(TAG, "Added -game parameter to argv: " + argv);
@@ -223,7 +180,6 @@ public class XashActivity extends SDLActivity {
                 argv += " -dll @hl";
         }
 
-        Log.d(TAG, "Final argv: " + argv);
         return argv.split(" ");
     }
 }
