@@ -1,6 +1,7 @@
 package su.xash.engine.ui.settings
 
 import android.os.Bundle
+import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import su.xash.engine.MainActivity
@@ -13,6 +14,7 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
 
     private lateinit var preferences: SharedPreferences
     private lateinit var gamePathPreference: Preference
+    private lateinit var globalArgsPreference: EditTextPreference
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.sharedPreferencesName = "app_preferences"
@@ -22,15 +24,10 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
         preferences.registerOnSharedPreferenceChangeListener(this)
 
         gamePathPreference = findPreference("game_path") ?: return
-        
-        val globalArgsPreference = findPreference<Preference>("global_arguments")
-        globalArgsPreference?.setOnPreferenceClickListener {
-            showGlobalArgumentsDialog()
-            true
-        }
+        globalArgsPreference = findPreference("global_arguments") ?: return
 
         updateGamePathSummary()
-        updateGlobalArgsSummary(globalArgsPreference)
+        updateGlobalArgsSummary()
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
@@ -39,8 +36,7 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
                 updateGamePathSummary()
             }
             "global_arguments" -> {
-                val globalArgsPreference = findPreference<Preference>("global_arguments")
-                updateGlobalArgsSummary(globalArgsPreference)
+                updateGlobalArgsSummary()
             }
         }
     }
@@ -58,28 +54,22 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
         }
     }
 
-    private fun updateGlobalArgsSummary(globalArgsPreference: Preference?) {
-        globalArgsPreference?.let { pref ->
-            val globalArgs = preferences.getString("global_arguments", "")
-            if (globalArgs.isNullOrEmpty()) {
-                pref.summary = "No global arguments set"
-            } else {
-                pref.summary = globalArgs
-            }
+    private fun updateGlobalArgsSummary() {
+        val globalArgs = preferences.getString("global_arguments", "")
+        if (globalArgs.isNullOrEmpty()) {
+            globalArgsPreference.summary = "No global arguments set"
+        } else {
+            globalArgsPreference.summary = globalArgs
         }
-    }
-
-    private fun showGlobalArgumentsDialog() {
-        val globalArgs = preferences.getString("global_arguments", "") ?: ""
-        android.util.Log.d("AppSettings", "Global arguments dialog should be shown. Current args: $globalArgs")
+        
+        globalArgsPreference.text = globalArgs
     }
 
     override fun onResume() {
         super.onResume()
         preferences.registerOnSharedPreferenceChangeListener(this)
         updateGamePathSummary()
-        val globalArgsPreference = findPreference<Preference>("global_arguments")
-        updateGlobalArgsSummary(globalArgsPreference)
+        updateGlobalArgsSummary()
     }
 
     override fun onPause() {
