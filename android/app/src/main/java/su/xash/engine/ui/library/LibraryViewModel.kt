@@ -37,13 +37,10 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 val games = mutableListOf<Game>()
                 
                 val internalPath = ctx.getExternalFilesDir(null)?.absolutePath
-                val externalPath = Environment.getExternalStorageDirectory().absolutePath + "/xash"
-                
                 val internalDir = File(internalPath ?: "")
-                val externalDir = File(externalPath)
                 
-                fixGamePermissions(internalDir)
-                fixGamePermissions(externalDir)
+                val externalPath = Environment.getExternalStorageDirectory().absolutePath + "/xash"
+                val externalDir = File(externalPath)
                 
                 if (internalDir.exists() && internalDir.isDirectory) {
                     games.addAll(Game.getGames(ctx, internalDir))
@@ -62,35 +59,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 _isReloading.postValue(false)
             }
         }
-    }
-
-    private fun fixGamePermissions(dir: File) {
-        try {
-            if (dir.exists() && dir.isDirectory) {
-                val gameDirs = dir.listFiles { file -> 
-                    file.isDirectory && isGameDirectory(file.name)
-                }
-                
-                gameDirs?.forEach { gameDir ->
-                    gameDir.setReadable(true, false)
-                    gameDir.setWritable(true, false)
-                    gameDir.setExecutable(true, false)
-                    
-                    gameDir.listFiles()?.forEach { file ->
-                        file.setReadable(true, false)
-                        file.setWritable(true, false)
-                        file.setExecutable(true, false)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun isGameDirectory(dirName: String): Boolean {
-        val gameDirs = arrayOf("valve", "cstrike", "czero", "gearbox", "bshift", "dmc", "hldms", "tfc", "wanted")
-        return gameDirs.contains(dirName.lowercase())
     }
 
     fun setSelectedGame(game: Game) {
