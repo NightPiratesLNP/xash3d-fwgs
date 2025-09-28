@@ -46,7 +46,7 @@ static CVAR_DEFINE_AUTO( cl_test_bandwidth, "1", FCVAR_ARCHIVE, "test network ba
 CVAR_DEFINE( cl_draw_particles, "r_drawparticles", "1", FCVAR_ARCHIVE, "render particles" );
 CVAR_DEFINE( cl_draw_tracers, "r_drawtracers", "1", FCVAR_ARCHIVE, "render tracers" );
 CVAR_DEFINE( cl_draw_beams, "r_drawbeams", "1", FCVAR_ARCHIVE, "render beams" );
-
+CVAR_DEFINE_AUTO( fps_max, "72", 0, "fake fps" );
 static CVAR_DEFINE_AUTO( rcon_address, "", FCVAR_PRIVILEGED, "remote control address" );
 CVAR_DEFINE_AUTO( cl_timeout, "999999999", 0, "connect timeout (in-seconds)" );
 CVAR_DEFINE_AUTO( cl_nopred, "0", FCVAR_ARCHIVE|FCVAR_USERINFO, "disable client movement prediction" );
@@ -3380,7 +3380,7 @@ static void CL_InitLocal( void )
 	Cvar_RegisterVariable( &cl_timeout );
 	Cvar_RegisterVariable( &cl_charset );
 	Cvar_RegisterVariable( &hud_utf8 );
-
+    Cvar_RegisterVariable( &fps_max );
 	Cvar_RegisterVariable( &rcon_address );
 
 	Cvar_RegisterVariable( &cl_trace_consistency );
