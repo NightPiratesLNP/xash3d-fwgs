@@ -86,7 +86,6 @@ CVAR_DEFINE_AUTO( ui_renderworld, "0", FCVAR_ARCHIVE, "render world when UI is v
 static CVAR_DEFINE_AUTO( cl_maxframetime, "0", 0, "set deadline timer for client rendering to catch freezes" );
 CVAR_DEFINE_AUTO( cl_fixmodelinterpolationartifacts, "1", 0, "try to fix up models interpolation on a moving platforms (monsters on trains for example)" );
 CVAR_DEFINE_AUTO( cl_screenfade, "1", FCVAR_ARCHIVE|FCVAR_PROTECTED, "toggle screenfade" );
-CVAR_DEFINE_AUTO( cl_seebehindwall, "0", FCVAR_PROTECTED, "see through walls" );
 //
 // userinfo
 //
@@ -3432,7 +3431,6 @@ static void CL_InitLocal( void )
 	Cvar_RegisterVariable( &cl_maxframetime );
 	Cvar_RegisterVariable( &cl_fixmodelinterpolationartifacts );
 	Cvar_RegisterVariable( &cl_screenfade );
-	Cvar_RegisterVariable( &cl_seebehindwall );
 	Cvar_RegisterVariable( &cl_ticket_custom );
 
 	// server commands
