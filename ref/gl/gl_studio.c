@@ -34,7 +34,7 @@ typedef struct
 	model_t		*model;
 } player_model_t;
 
-// never gonna change, just shut up const warning
+CVAR_DEFINE_AUTO( cl_seebehindwall, "0", FCVAR_PROTECTED, "see through walls" );
 CVAR_DEFINE_AUTO( r_shadows, "0", 0, "draw ugly shadows" );
 
 static const vec3_t hullcolor[8] =
