@@ -2880,19 +2880,22 @@ static void R_StudioSetupRenderer( int rendermode )
 			Matrix3x4_ConcatTransforms( g_studio.worldtransform[i], g_studio.bonestransform[i], boneinfo[i].poseToBone );
 	}
 
-	if ( Cvar_VariableInteger ( "cl_seebehindwall" ) == 1) 
+	if ( cl_seebehindwall.value == 1 ) 
 	{
 		pglDisable( GL_TRIANGLES );
 		pglDisable( GL_DEPTH_TEST );
 		pglDepthRange( 0.0, 0.5 );
 	}
-	else if ( Cvar_VariableInteger ( "cl_seebehindwall" ) == 2) 
+	else if ( cl_seebehindwall.value == 2 ) 
 	{
 		pglEnable( GL_TRIANGLES );
-		pglEnable(GL_DEPTH_TEST);
-		pglDepthRange(0.0, 0.5);
+		pglEnable( GL_DEPTH_TEST );
+		pglDepthRange( 0.0, 0.5 );
 	}
-	else if( !pglIsEnabled( GL_DEPTH_TEST ) ) pglEnable( GL_DEPTH_TEST );
+	else if( !pglIsEnabled( GL_DEPTH_TEST ) ) 
+	{
+		pglEnable( GL_DEPTH_TEST );
+	}
 }
 
 /*
