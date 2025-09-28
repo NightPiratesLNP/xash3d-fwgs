@@ -1151,7 +1151,7 @@ static void GL_InitCommands( void )
 	gEngfuncs.Cvar_RegisterVariable( &r_vbo_detail );
 	gEngfuncs.Cvar_RegisterVariable( &r_large_lightmaps );
 	gEngfuncs.Cvar_RegisterVariable( &r_dlight_virtual_radius );
-
+    gEngfuncs.Cvar_RegisterVariable( &cl_seebehindwall );
 	gEngfuncs.Cvar_RegisterVariable( &gl_extensions );
 	gEngfuncs.Cvar_RegisterVariable( &gl_texture_nearest );
 	gEngfuncs.Cvar_RegisterVariable( &gl_lightmap_nearest );
