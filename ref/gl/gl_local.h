@@ -789,7 +789,7 @@ extern convar_t	gl_msaa;
 extern convar_t	gl_stencilbits;
 extern convar_t	gl_overbright;
 extern convar_t gl_fog;
-
+extern convar_t cl_seebehindwall;
 extern convar_t	r_lighting_extended;
 extern convar_t	r_lighting_ambient;
 extern convar_t	r_studio_lambert;
