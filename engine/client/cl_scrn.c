@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #include "input.h"
 #include "library.h"
 
+CVAR_DEFINE_AUTO( scr_skip_frames, "0", FCVAR_PROTECTED, "skip frames to terakke fps" );
 CVAR_DEFINE_AUTO( scr_centertime, "2.5", 0, "centerprint hold time" );
 CVAR_DEFINE_AUTO( scr_loading, "0", 0, "loading bar progress" );
 CVAR_DEFINE_AUTO( scr_download, "-1", 0, "downloading bar progress" );
@@ -94,12 +95,21 @@ void SCR_DrawFPS( int height )
 	{
 		int	curfps = (int)(calc + 0.5f);
 
-		if( curfps < minfps ) minfps = curfps;
-		if( curfps > maxfps ) maxfps = curfps;
-
-		if( cl_showfps.value == 2 )
-			Q_snprintf( fpsstring, sizeof( fpsstring ), "fps: ^1%4i min, ^3%4i cur, ^2%4i max", minfps, curfps, maxfps );
-		else Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i fps", curfps );
+		if( scr_skip_frames.value > 0 )
+		{
+			if( cl_showfps.value == 2 )
+				Q_snprintf( fpsstring, sizeof( fpsstring ), "fps(skip %d): ^1%4i min, ^3%4i cur, ^2%4i max", 
+					(int)scr_skip_frames.value, minfps, curfps, maxfps );
+			else 
+				Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i fps(skip %d)", curfps, (int)scr_skip_frames.value );
+		}
+		else
+		{
+			if( cl_showfps.value == 2 )
+				Q_snprintf( fpsstring, sizeof( fpsstring ), "fps: ^1%4i min, ^3%4i cur, ^2%4i max", minfps, curfps, maxfps );
+			else 
+				Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i fps", curfps );
+		}
 		MakeRGBA( color, 255, 255, 255, 255 );
 	}
 
@@ -663,17 +673,49 @@ void SCR_TileClear( void )
 	}
 }
 
-/*
-==================
+/* ==================
 SCR_UpdateScreen
-
-This is called every frame, and can also be called explicitly to flush
-text to the screen.
-==================
-*/
+This is called every frame, and can also be called explicitly to flush text to the screen.
+================== */
 void SCR_UpdateScreen( void )
 {
+	static int frame_count = 0;
+	static qboolean skip_rendering = false;
+	int skip_frames;
 	qboolean screen_redraw = true; // assume screen has been redrawn
+
+	skip_frames = (int)scr_skip_frames.value;
+	if( skip_frames > 0 && cls.state == ca_active )
+	{
+		frame_count++;
+		
+		if( frame_count <= skip_frames )
+		{
+			skip_rendering = true;
+		}
+		else
+		{
+			skip_rendering = false;
+			frame_count = 0;
+		}
+	}
+	else
+	{
+		skip_rendering = false;
+		frame_count = 0;
+	}
+	
+	if( skip_rendering )
+	{
+		ref.dllFuncs.R_ClearScreen();
+		
+		if( cls.state == ca_active )
+		{
+			Con_RunConsole ();
+			V_PostRender();
+		}
+		return;
+	}
 
 	if( !V_PreRender( )) return;
 
@@ -911,6 +953,7 @@ void SCR_Init( void )
 	Cvar_RegisterVariable( &cl_envshot_size );
 	Cvar_RegisterVariable( &v_dark );
 	Cvar_RegisterVariable( &scr_viewsize );
+	Cvar_RegisterVariable( &scr_skip_frames );
 	Cvar_RegisterVariable( &net_speeds );
 	Cvar_RegisterVariable( &cl_showfps );
 	Cvar_RegisterVariable( &cl_showpos );
