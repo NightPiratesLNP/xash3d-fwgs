@@ -673,13 +673,13 @@ void SCR_UpdateScreen( void )
     static int frame_count = 0;
     static qboolean skip_this_frame = false;
     int skip_frames;
-    
+    qboolean screen_redraw = true;
+
     // Frame skipping logic
     skip_frames = (int)scr_skip_frames.value;
     if( skip_frames > 0 )
     {
         frame_count++;
-
         if( frame_count <= skip_frames )
         {
             skip_this_frame = true;
@@ -699,9 +699,23 @@ void SCR_UpdateScreen( void )
     if( skip_this_frame )
         return;
 
-    qboolean screen_redraw = true;
-
     if( !V_PreRender( )) return;
+
+    switch( cls.scrshot_action )
+    {
+    case scrshot_normal:
+    case scrshot_snapshot:
+    case scrshot_plaque:
+    case scrshot_savegame:
+    case scrshot_envshot:
+    case scrshot_skyshot:
+    case scrshot_mapshot:
+    case scrshot_inactive:
+        break;
+    default:
+        Host_Error( "%s: bad cls.scrshot_action\n", __func__ );
+        break;
+    }
 
     switch( cls.state )
     {
