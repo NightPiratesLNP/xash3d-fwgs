@@ -745,7 +745,6 @@ static qboolean Host_FilterTime( double time )
 	static int	frame_count = 0;
 	static qboolean	skip_this_frame = false;
 	int		skip_frames;
-	double	dt;
 	double	scale = sys_timescale.value;
 
 	skip_frames = (int)host_skip_frames.value;
