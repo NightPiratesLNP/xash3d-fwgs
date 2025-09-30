@@ -681,11 +681,13 @@ void SCR_UpdateScreen( void )
 {
 	static int frame_count = 0;
 	int skip_frames;
+	qboolean screen_redraw = true; // assume screen has been redrawn
 
 	skip_frames = (int)scr_skip_frames.value;
 	if( skip_frames > 0 && cls.state == ca_active )
 	{
 		frame_count++;
+
 		if( frame_count <= skip_frames )
 		{
 			return;
@@ -699,8 +701,6 @@ void SCR_UpdateScreen( void )
 	{
 		frame_count = 0;
 	}
-	qboolean screen_redraw = true; // assume screen has been redrawn
-
 	if( !V_PreRender( )) return;
 
 	switch( cls.state )
