@@ -61,7 +61,7 @@ void Host_ExitInMain( void )
 #ifdef XASH_ENGINE_TESTS
 struct tests_stats_s tests_stats;
 #endif
-
+CVAR_DEFINE_AUTO( host_skip_frames, "0", FCVAR_ARCHIVE, "skip frames to terakke fps" );
 CVAR_DEFINE( host_developer, "developer", "0", FCVAR_FILTERABLE, "engine is in development-mode" );
 CVAR_DEFINE_AUTO( sys_timescale, "1.0", FCVAR_FILTERABLE, "scale frame time" );
 
@@ -742,21 +742,44 @@ Returns false if the time is too short to run a frame
 static qboolean Host_FilterTime( double time )
 {
 	static double	oldtime;
-	double dt;
-	double scale = sys_timescale.value;
+	static int	frame_count = 0;
+	static qboolean	skip_this_frame = false;
+	int		skip_frames;
+	double	dt;
+	double	scale = sys_timescale.value;
+
+	skip_frames = (int)host_skip_frames.value;
+	if( skip_frames > 0 && cls.state == ca_active )
+	{
+		frame_count++;
+		
+		if( frame_count <= skip_frames )
+		{
+			skip_this_frame = true;
+		}
+		else
+		{
+			skip_this_frame = false;
+			frame_count = 0;
+		}
+	}
+	else
+	{
+		skip_this_frame = false;
+		frame_count = 0;
+	}
+	if( skip_this_frame )
+	{
+		host.realtime += time * scale;
+		return false;
+	}
 
 	host.realtime += time * scale;
 	dt = host.realtime - oldtime;
-
-	// clamp the fps in multiplayer games
-	if( !Host_Autosleep( dt, scale ))
-		return false;
-
 	host.frametime = host.realtime - oldtime;
 	host.realframetime = bound( MIN_FRAMETIME, host.frametime, MAX_FRAMETIME );
 	oldtime = host.realtime;
 
-	// NOTE: allow only in singleplayer while demos are not active
 	if( host_framerate.value > 0.0f )
 		host.frametime = bound( MIN_FRAMETIME, host_framerate.value * scale, MAX_FRAMETIME );
 	else host.frametime = bound( MIN_FRAMETIME, host.frametime, MAX_FRAMETIME );
@@ -1222,7 +1245,7 @@ int EXPORT Host_Main( int argc, char **argv, const char *progname, int bChangeGa
 	Cvar_RegisterVariable( &host_limitlocal );
 	Cvar_RegisterVariable( &con_gamemaps );
 	Cvar_RegisterVariable( &sys_timescale );
-
+    Cvar_RegisterVariable( &host_skip_frames );
 	Cvar_Getf( "buildnum", FCVAR_READ_ONLY, "returns a current build number", "%i", Q_buildnum_compat());
 	Cvar_Getf( "ver", FCVAR_READ_ONLY, "shows an engine version", "%i/%s (hw build %i)", PROTOCOL_VERSION, XASH_COMPAT_VERSION, Q_buildnum_compat());
 	Cvar_Getf( "host_ver", FCVAR_READ_ONLY, "detailed info about this build", "%i " XASH_VERSION " %s %s %s", Q_buildnum(), Q_buildos(), Q_buildarch(), g_buildcommit);
