@@ -20,7 +20,6 @@ GNU General Public License for more details.
 #include "input.h"
 #include "library.h"
 
-CVAR_DEFINE_AUTO( scr_skip_frames, "0", FCVAR_PROTECTED, "skip frames to terakke fps" );
 CVAR_DEFINE_AUTO( scr_centertime, "2.5", 0, "centerprint hold time" );
 CVAR_DEFINE_AUTO( scr_loading, "0", 0, "loading bar progress" );
 CVAR_DEFINE_AUTO( scr_download, "-1", 0, "downloading bar progress" );
@@ -664,86 +663,47 @@ void SCR_TileClear( void )
 	}
 }
 
-/* ==================
+/*
+==================
 SCR_UpdateScreen
-This is called every frame, and can also be called explicitly to flush text to the screen.
-================== */
+
+This is called every frame, and can also be called explicitly to flush
+text to the screen.
+==================
+*/
 void SCR_UpdateScreen( void )
 {
-    static int frame_count = 0;
-    static qboolean skip_this_frame = false;
-    int skip_frames;
-    qboolean screen_redraw = true;
+	qboolean screen_redraw = true; // assume screen has been redrawn
 
-    // Frame skipping logic
-    skip_frames = (int)scr_skip_frames.value;
-    if( skip_frames > 0 )
-    {
-        frame_count++;
-        if( frame_count <= skip_frames )
-        {
-            skip_this_frame = true;
-        }
-        else
-        {
-            skip_this_frame = false;
-            frame_count = 0;
-        }
-    }
-    else
-    {
-        skip_this_frame = false;
-        frame_count = 0;
-    }
+	if( !V_PreRender( )) return;
 
-    if( skip_this_frame )
-        return;
+	switch( cls.state )
+	{
+	case ca_disconnected:
+		Con_RunConsole ();
+		break;
+	case ca_connecting:
+	case ca_connected:
+	case ca_validate:
+		screen_redraw = SCR_DrawPlaque();
+		break;
+	case ca_active:
+		Con_RunConsole ();
+		V_RenderView();
+		break;
+	case ca_cinematic:
+		SCR_DrawCinematic();
+		break;
+	default:
+		Host_Error( "%s: bad cls.state\n", __func__ );
+		break;
+	}
 
-    if( !V_PreRender( )) return;
-
-    switch( cls.scrshot_action )
-    {
-    case scrshot_normal:
-    case scrshot_snapshot:
-    case scrshot_plaque:
-    case scrshot_savegame:
-    case scrshot_envshot:
-    case scrshot_skyshot:
-    case scrshot_mapshot:
-    case scrshot_inactive:
-        break;
-    default:
-        Host_Error( "%s: bad cls.scrshot_action\n", __func__ );
-        break;
-    }
-
-    switch( cls.state )
-    {
-    case ca_disconnected:
-        Con_RunConsole ();
-        break;
-    case ca_connecting:
-    case ca_connected:
-    case ca_validate:
-        screen_redraw = SCR_DrawPlaque();
-        break;
-    case ca_active:
-        Con_RunConsole ();
-        V_RenderView();
-        break;
-    case ca_cinematic:
-        SCR_DrawCinematic();
-        break;
-    default:
-        Host_Error( "%s: bad cls.state\n", __func__ );
-        break;
-    }
-
-    // during changelevel we might have a few frames when we have nothing to draw
-    // (assuming levelshots are off) and drawing 2d on top of nothing or cleared screen
-    // is ugly, specifically with Adreno and ImgTec GPUs
-    if( screen_redraw || !cls.changelevel || !cls.changedemo )
-        V_PostRender();
+	// during changelevel we might have a few frames when we have nothing to draw
+	// (assuming levelshots are off) and drawing 2d on top of nothing or cleared screen
+	// is ugly, specifically with Adreno and ImgTec GPUs
+	if( screen_redraw || !cls.changelevel || !cls.changedemo )
+		V_PostRender();
 }
 
 /*
@@ -951,7 +911,6 @@ void SCR_Init( void )
 	Cvar_RegisterVariable( &cl_envshot_size );
 	Cvar_RegisterVariable( &v_dark );
 	Cvar_RegisterVariable( &scr_viewsize );
-	Cvar_RegisterVariable( &scr_skip_frames );
 	Cvar_RegisterVariable( &net_speeds );
 	Cvar_RegisterVariable( &cl_showfps );
 	Cvar_RegisterVariable( &cl_showpos );
