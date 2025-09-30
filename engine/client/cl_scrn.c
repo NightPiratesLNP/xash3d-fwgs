@@ -680,42 +680,26 @@ This is called every frame, and can also be called explicitly to flush text to t
 void SCR_UpdateScreen( void )
 {
 	static int frame_count = 0;
-	static qboolean skip_rendering = false;
 	int skip_frames;
-	qboolean screen_redraw = true; // assume screen has been redrawn
 
 	skip_frames = (int)scr_skip_frames.value;
 	if( skip_frames > 0 && cls.state == ca_active )
 	{
 		frame_count++;
-		
 		if( frame_count <= skip_frames )
 		{
-			skip_rendering = true;
+			return;
 		}
 		else
 		{
-			skip_rendering = false;
 			frame_count = 0;
 		}
 	}
 	else
 	{
-		skip_rendering = false;
 		frame_count = 0;
 	}
-	
-	if( skip_rendering )
-	{
-		ref.dllFuncs.R_ClearScreen();
-		
-		if( cls.state == ca_active )
-		{
-			Con_RunConsole ();
-			V_PostRender();
-		}
-		return;
-	}
+	qboolean screen_redraw = true; // assume screen has been redrawn
 
 	if( !V_PreRender( )) return;
 
