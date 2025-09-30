@@ -742,10 +742,38 @@ Returns false if the time is too short to run a frame
 static qboolean Host_FilterTime( double time )
 {
 	static double	oldtime;
-	static int	frame_count = 0;
-	static qboolean	skip_this_frame = false;
-	int		skip_frames;
-	double	scale = sys_timescale.value;
+	double dt;
+	double scale = sys_timescale.value;
+
+	host.realtime += time * scale;
+	dt = host.realtime - oldtime;
+
+	// clamp the fps in multiplayer games
+	if( !Host_Autosleep( dt, scale ))
+		return false;
+
+	host.frametime = host.realtime - oldtime;
+	host.realframetime = bound( MIN_FRAMETIME, host.frametime, MAX_FRAMETIME );
+	oldtime = host.realtime;
+
+	if( host_framerate.value > 0.0f )
+		host.frametime = bound( MIN_FRAMETIME, host_framerate.value * scale, MAX_FRAMETIME );
+	else host.frametime = bound( MIN_FRAMETIME, host.frametime, MAX_FRAMETIME );
+
+	return true;
+}
+
+/*
+=================
+Host_Frame
+=================
+*/
+void Host_Frame( double time )
+{
+	static int frame_count = 0;
+	static qboolean skip_this_frame = false;
+	int skip_frames;
+	double t1;
 
 	skip_frames = (int)host_skip_frames.value;
 	if( skip_frames > 0 && cls.state == ca_active )
@@ -767,35 +795,13 @@ static qboolean Host_FilterTime( double time )
 		skip_this_frame = false;
 		frame_count = 0;
 	}
+	
 	if( skip_this_frame )
 	{
-		host.realtime += time * scale;
-		return false;
+		Host_GetCommands();
+		return;
 	}
 
-	host.realtime += time * scale;
-	dt = host.realtime - oldtime;
-	host.frametime = host.realtime - oldtime;
-	host.realframetime = bound( MIN_FRAMETIME, host.frametime, MAX_FRAMETIME );
-	oldtime = host.realtime;
-
-	if( host_framerate.value > 0.0f )
-		host.frametime = bound( MIN_FRAMETIME, host_framerate.value * scale, MAX_FRAMETIME );
-	else host.frametime = bound( MIN_FRAMETIME, host.frametime, MAX_FRAMETIME );
-
-	return true;
-}
-
-/*
-=================
-Host_Frame
-=================
-*/
-void Host_Frame( double time )
-{
-	double t1;
-
-	// decide the simulation time
 	if( !Host_FilterTime( time ))
 		return;
 
@@ -804,12 +810,12 @@ void Host_Frame( double time )
 	if( host.framecount == 0 )
 		Con_DPrintf( "Time to first frame: %.3f seconds\n", t1 - host.starttime );
 
-	Host_InputFrame ();  // input frame
-	Host_ClientBegin (); // begin client
-	Host_GetCommands (); // dedicated in
-	Host_ServerFrame (); // server frame
-	Host_ClientFrame (); // client frame
-	HTTP_Run();			 // both server and client
+	Host_InputFrame ();
+	Host_ClientBegin ();
+	Host_GetCommands ();
+	Host_ServerFrame ();
+	Host_ClientFrame ();
+	HTTP_Run();
 
 	host.framecount++;
 	host.pureframetime = Sys_DoubleTime() - t1;
