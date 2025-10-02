@@ -51,7 +51,10 @@ static uint cmd_condition;
 static int  cmd_condlevel;
 static qboolean cmd_currentCommandIsPrivileged;
 static poolhandle_t cmd_pool;
-
+static void Cmd_LoadFilterConfig( void );
+static qboolean Cmd_IsFiltered( const char *cmd );
+static void Cmd_FilterCommands( cmdbuf_t *buf );
+static void Cmd_ReloadFilter_f( void );
 static void Cmd_ExecuteStringWithPrivilegeCheck( const char *text, qboolean isPrivileged );
 
 /*
@@ -538,9 +541,12 @@ static void Cmd_LoadFilterConfig( void )
 	char filename[256];
 	char path[512];
 	file_t *f;
-	char *data, *p, *line;
-	int i, len;
+	char *data, *p;
+	char line[MAX_CMD_LINE];
+	int len;
+
 	num_filtered_commands = 0;
+
 	Q_snprintf( filename, sizeof( filename ), "cmdfilter.ini" );
 	f = FS_Open( filename, "r", false );
 
@@ -567,22 +573,52 @@ static void Cmd_LoadFilterConfig( void )
 	FS_Close( f );
 
 	p = data;
-	while( ( line = COM_ParseFile( &p, NULL ) ) != NULL )
+	while( p && *p )
 	{
-		if( !line[0] || line[0] == '/' || line[0] == ';' )
-			continue;
+		while( *p && (byte)*p <= ' ' )
+			p++;
 
-		if( num_filtered_commands < MAX_FILTERED_CMDS )
+		if( !*p ) break;
+
+		if( *p == '/' && *(p+1) == '/' )
+		{
+			while( *p && *p != '\n' )
+				p++;
+			continue;
+		}
+
+		if( *p == ';' )
+		{
+			while( *p && *p != '\n' )
+				p++;
+			continue;
+		}
+
+		char *line_start = p;
+		while( *p && *p != '\n' && *p != '\r' )
+			p++;
+		int line_len = p - line_start;
+		if( line_len >= sizeof( line ) )
+			line_len = sizeof( line ) - 1;
+
+		memcpy( line, line_start, line_len );
+		line[line_len] = 0;
+
+		while( line_len > 0 && (byte)line[line_len-1] <= ' ' )
+			line[--line_len] = 0;
+		if( line_len > 0 && num_filtered_commands < MAX_FILTERED_CMDS )
 		{
 			filtered_commands[num_filtered_commands] = copystringpool( cmd_pool, line );
 			num_filtered_commands++;
 			Con_DPrintf( "Cmd_LoadFilterConfig: added filter for '%s'\n", line );
 		}
-		else
+		else if( num_filtered_commands >= MAX_FILTERED_CMDS )
 		{
 			Con_Printf( S_ERROR "Cmd_LoadFilterConfig: too many filtered commands, max is %d\n", MAX_FILTERED_CMDS );
 			break;
 		}
+		while( *p && ( *p == '\n' || *p == '\r' ) )
+			p++;
 	}
 	Mem_Free( data );
 	cmd_filter_initialized = true;
