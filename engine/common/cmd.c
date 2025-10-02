@@ -539,73 +539,63 @@ Load commands to filter from cmdfilter.ini
 static void Cmd_LoadFilterConfig( void )
 {
 	char filename[256];
-	char path[512];
 	file_t *f;
 	char *data, *p;
 	char line[MAX_CMD_LINE];
 	int len;
-
 	num_filtered_commands = 0;
-
+	
 	Q_snprintf( filename, sizeof( filename ), "cmdfilter.ini" );
 	f = FS_Open( filename, "r", false );
-
-	if( !f )
-	{
-		const char *gamedir = Host_GetGameDir();
-		if( gamedir && gamedir[0] )
-		{
-			Q_snprintf( path, sizeof( path ), "%s/cmdfilter.ini", gamedir );
-			f = FS_Open( path, "r", false );
-		}
-	}
-
+	
 	if( !f )
 	{
 		Con_DPrintf( "Cmd_LoadFilterConfig: cmdfilter.ini not found\n" );
 		return;
 	}
-
+	
 	len = FS_FileLength( f );
 	data = Mem_Malloc( cmd_pool, len + 1 );
 	FS_Read( f, data, len );
 	data[len] = 0;
 	FS_Close( f );
-
+	
 	p = data;
 	while( p && *p )
 	{
 		while( *p && (byte)*p <= ' ' )
 			p++;
-
+			
 		if( !*p ) break;
-
+	
 		if( *p == '/' && *(p+1) == '/' )
 		{
 			while( *p && *p != '\n' )
 				p++;
 			continue;
 		}
-
+		
 		if( *p == ';' )
 		{
 			while( *p && *p != '\n' )
 				p++;
 			continue;
 		}
-
+	
 		char *line_start = p;
 		while( *p && *p != '\n' && *p != '\r' )
 			p++;
+			
 		int line_len = p - line_start;
 		if( line_len >= sizeof( line ) )
 			line_len = sizeof( line ) - 1;
-
+			
 		memcpy( line, line_start, line_len );
 		line[line_len] = 0;
-
+	
 		while( line_len > 0 && (byte)line[line_len-1] <= ' ' )
 			line[--line_len] = 0;
+		
 		if( line_len > 0 && num_filtered_commands < MAX_FILTERED_CMDS )
 		{
 			filtered_commands[num_filtered_commands] = copystringpool( cmd_pool, line );
@@ -617,9 +607,11 @@ static void Cmd_LoadFilterConfig( void )
 			Con_Printf( S_ERROR "Cmd_LoadFilterConfig: too many filtered commands, max is %d\n", MAX_FILTERED_CMDS );
 			break;
 		}
+
 		while( *p && ( *p == '\n' || *p == '\r' ) )
 			p++;
 	}
+	
 	Mem_Free( data );
 	cmd_filter_initialized = true;
 	Con_Printf( "Cmd_LoadFilterConfig: loaded %d filtered commands\n", num_filtered_commands );
