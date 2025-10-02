@@ -12,7 +12,7 @@
     <string name="preferences_client_package">Client package</string>
     <string name="preferences_server_package">Server package</string>
     <string name="preferences_use_icons">Use icons instead of backgrounds</string>
-    <string name="game_data_location">Game data location</string>
+    <string name="game_data_location">Default data location</string>
     <string name="file_access_required">All-files access required</string>
     <string name="file_access_message">All-files access is required for the app to function properly.</string>
     <string name="select_current_directory">Select current directory</string>

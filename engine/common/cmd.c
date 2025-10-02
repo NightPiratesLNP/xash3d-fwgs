@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #define MAX_CMD_BUFFER	32768
 #define MAX_CMD_LINE	2048
 #define MAX_ALIAS_NAME	32
+#define MAX_FILTERED_CMDS 256
 
 typedef struct
 {
@@ -29,6 +30,9 @@ typedef struct
 	int cursize;
 } cmdbuf_t;
 
+static char *filtered_commands[MAX_FILTERED_CMDS];
+static int num_filtered_commands = 0;
+static qboolean cmd_filter_initialized = false;
 static qboolean cmd_wait;
 static byte     cmd_text_buf[MAX_CMD_BUFFER];
 static byte     filteredcmd_text_buf[MAX_CMD_BUFFER];
@@ -183,6 +187,11 @@ static void Cbuf_ExecuteCommandsFromBuffer( cmdbuf_t *buf, qboolean isPrivileged
 	char	line[MAX_CMD_LINE];
 	int	i, quotes;
 	char	*comment;
+
+	if( !isPrivileged && buf == &filteredcmd_text )
+	{
+		Cmd_FilterCommands( buf );
+	}
 
 	while( buf->cursize )
 	{
@@ -515,6 +524,229 @@ static void Cmd_UnAlias_f ( void )
 
 		if( !a ) Con_Printf( "%s not found\n", s );
 	}
+}
+
+/*
+============
+Cmd_LoadFilterConfig
+
+Load commands to filter from cmdfilter.ini
+============
+*/
+static void Cmd_LoadFilterConfig( void )
+{
+	char filename[256];
+	char path[512];
+	file_t *f;
+	char *data, *p, *line;
+	int i, len;
+	num_filtered_commands = 0;
+	Q_snprintf( filename, sizeof( filename ), "cmdfilter.ini" );
+	f = FS_Open( filename, "r", false );
+
+	if( !f )
+	{
+		const char *gamedir = Host_GetGameDir();
+		if( gamedir && gamedir[0] )
+		{
+			Q_snprintf( path, sizeof( path ), "%s/cmdfilter.ini", gamedir );
+			f = FS_Open( path, "r", false );
+		}
+	}
+
+	if( !f )
+	{
+		Con_DPrintf( "Cmd_LoadFilterConfig: cmdfilter.ini not found\n" );
+		return;
+	}
+
+	len = FS_FileLength( f );
+	data = Mem_Malloc( cmd_pool, len + 1 );
+	FS_Read( f, data, len );
+	data[len] = 0;
+	FS_Close( f );
+
+	p = data;
+	while( ( line = COM_ParseFile( &p, NULL ) ) != NULL )
+	{
+		if( !line[0] || line[0] == '/' || line[0] == ';' )
+			continue;
+
+		if( num_filtered_commands < MAX_FILTERED_CMDS )
+		{
+			filtered_commands[num_filtered_commands] = copystringpool( cmd_pool, line );
+			num_filtered_commands++;
+			Con_DPrintf( "Cmd_LoadFilterConfig: added filter for '%s'\n", line );
+		}
+		else
+		{
+			Con_Printf( S_ERROR "Cmd_LoadFilterConfig: too many filtered commands, max is %d\n", MAX_FILTERED_CMDS );
+			break;
+		}
+	}
+	Mem_Free( data );
+	cmd_filter_initialized = true;
+	Con_Printf( "Cmd_LoadFilterConfig: loaded %d filtered commands\n", num_filtered_commands );
+}
+
+/*
+============
+Cmd_IsFiltered
+
+Check if a command should be filtered
+============
+*/
+static qboolean Cmd_IsFiltered( const char *cmd )
+{
+	int i;
+	if( !cmd_filter_initialized )
+		Cmd_LoadFilterConfig();
+	for( i = 0; i < num_filtered_commands; i++ )
+	{
+		if( !Q_stricmp( cmd, filtered_commands[i] ) )
+			return true;
+	}
+	return false;
+}
+
+/*
+============
+Cmd_FilterCommands
+
+Filter commands from text buffer
+============
+*/
+static void Cmd_FilterCommands( cmdbuf_t *buf )
+{
+	char *text, *filtered_text;
+	char line[MAX_CMD_LINE];
+	int i, j, quotes, new_size;
+	qboolean skip_line, comment;
+	char *comment_pos;
+
+	if( !cmd_filter_initialized )
+		Cmd_LoadFilterConfig();
+
+	if( num_filtered_commands == 0 || buf->cursize == 0 )
+		return;
+
+	filtered_text = Mem_Malloc( cmd_pool, buf->maxsize );
+	new_size = 0;
+	text = (char *)buf->data;
+
+	for( i = 0; i < buf->cursize; )
+	{
+		quotes = false;
+		comment = false;
+		comment_pos = NULL;
+		skip_line = false;
+
+		for( j = 0; i + j < buf->cursize; j++ )
+		{
+			if( !comment )
+			{
+				if( text[i + j] == '"' )
+					quotes = !quotes;
+
+				if( quotes )
+				{
+					if( i + j < buf->cursize - 1 && 
+						text[i + j] == '\\' && 
+						(text[i + j + 1] == '"' || text[i + j + 1] == '\\') )
+						j++;
+				}
+				else
+				{
+					if( i + j < buf->cursize - 1 &&
+						text[i + j] == '/' && text[i + j + 1] == '/' &&
+						( j == 0 || (byte)text[i + j - 1] <= ' ' ) )
+					{
+						comment = true;
+						comment_pos = &text[i + j];
+					}
+					if( text[i + j] == ';' )
+						break;
+				}
+			}
+			if( text[i + j] == '\n' || text[i + j] == '\r' )
+				break;
+		}
+		int line_end = (i + j < buf->cursize) ? j : buf->cursize - i;
+
+		if( line_end >= sizeof(line) )
+			line_end = sizeof(line) - 1;
+		memcpy( line, &text[i], comment_pos ? (comment_pos - &text[i]) : line_end );
+		line[comment_pos ? (comment_pos - &text[i]) : line_end] = 0;
+
+		if( !comment_pos )
+		{
+			char *cmd_start = line;
+
+			while( *cmd_start && (byte)*cmd_start <= ' ' )
+				cmd_start++;
+
+			if( *cmd_start == '+' || *cmd_start == '-' || 
+				(*cmd_start >= 'a' && *cmd_start <= 'z') ||
+				(*cmd_start >= 'A' && *cmd_start <= 'Z') ||
+				*cmd_start == '_' )
+			{
+				char command[64];
+				int k = 0;
+				while( *cmd_start && 
+					   (*cmd_start == '+' || *cmd_start == '-' ||
+					   (*cmd_start >= 'a' && *cmd_start <= 'z') ||
+					   (*cmd_start >= 'A' && *cmd_start <= 'Z') ||
+					   (*cmd_start >= '0' && *cmd_start <= '9') ||
+					   *cmd_start == '_') &&
+					   k < sizeof(command) - 1 )
+				{
+					command[k++] = *cmd_start++;
+				}
+				command[k] = 0;
+				if( command[0] && Cmd_IsFiltered( command ) )
+				{
+					skip_line = true;
+					Con_DPrintf( "Cmd_FilterCommands: filtered '%s'\n", command );
+				}
+			}
+		}
+		if( !skip_line )
+		{
+			int copy_len = (i + j < buf->cursize) ? j + 1 : buf->cursize - i;
+			memcpy( &filtered_text[new_size], &text[i], copy_len );
+			new_size += copy_len;
+		}
+		if( i + j < buf->cursize )
+			i += j + 1;
+		else
+			break;
+	}
+
+	memcpy( buf->data, filtered_text, new_size );
+	buf->cursize = new_size;
+
+	Mem_Free( filtered_text );
+}
+
+/*
+============
+Cmd_ReloadFilter_f
+
+Reload command filter configuration
+============
+*/
+static void Cmd_ReloadFilter_f( void )
+{
+	int i;
+	for( i = 0; i < num_filtered_commands; i++ )
+	{
+		if( filtered_commands[i] )
+			Mem_Free( filtered_commands[i] );
+	}
+	num_filtered_commands = 0;
+
+	Cmd_LoadFilterConfig();
+	Con_Printf( "Command filter configuration reloaded\n" );
 }
 
 /*
@@ -1362,7 +1594,7 @@ void Cmd_Init( void )
 	Cmd_AddRestrictedCommand( "unalias", Cmd_UnAlias_f, "remove a script function" );
 	Cmd_AddRestrictedCommand( "if", Cmd_If_f, "compare and set condition bits" );
 	Cmd_AddRestrictedCommand( "else", Cmd_Else_f, "invert condition bit" );
-
+	Cmd_AddCommand( "reload_filter", Cmd_ReloadFilter_f, "reload cmdfilter config from cmdfilter.ini" );
 	Cmd_AddRestrictedCommand( "make_privileged", Cmd_MakePrivileged_f, "makes command or variable privileged (protected from access attempts from server)" );
 
 #if defined(XASH_HASHED_VARS)
@@ -1373,6 +1605,14 @@ void Cmd_Init( void )
 
 void Cmd_Shutdown( void )
 {
+	int i;
+	for( i = 0; i < num_filtered_commands; i++ )
+	{
+		if( filtered_commands[i] )
+			Mem_Free( filtered_commands[i] );
+	}
+	num_filtered_commands = 0;
+
 	Mem_FreePool( &cmd_pool );
 }
 
