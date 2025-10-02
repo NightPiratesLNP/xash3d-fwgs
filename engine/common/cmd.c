@@ -546,14 +546,23 @@ static void Cmd_LoadFilterConfig( void )
 	char *line_start;
 	int line_len;
 	
-	num_filtered_commands = 0;
+	if( cmd_filter_initialized )
+		return;
 	
+	num_filtered_commands = 0;
+
 	Q_snprintf( filename, sizeof( filename ), "cmdfilter.ini" );
 	f = FS_Open( filename, "r", false );
 	
 	if( !f )
 	{
-		Con_DPrintf( "Cmd_LoadFilterConfig: cmdfilter.ini not found\n" );
+		static qboolean file_not_found_printed = false;
+		if( !file_not_found_printed )
+		{
+			Con_DPrintf( "Cmd_LoadFilterConfig: cmdfilter.ini not found\n" );
+			file_not_found_printed = true;
+		}
+		cmd_filter_initialized = true;
 		return;
 	}
 	
@@ -570,7 +579,7 @@ static void Cmd_LoadFilterConfig( void )
 			p++;
 			
 		if( !*p ) break;
-		
+
 		if( *p == '/' && *(p+1) == '/' )
 		{
 			while( *p && *p != '\n' )
@@ -584,7 +593,7 @@ static void Cmd_LoadFilterConfig( void )
 				p++;
 			continue;
 		}
-	
+
 		line_start = p;
 		while( *p && *p != '\n' && *p != '\r' )
 			p++;
@@ -616,7 +625,11 @@ static void Cmd_LoadFilterConfig( void )
 	
 	Mem_Free( data );
 	cmd_filter_initialized = true;
-	Con_Printf( "Cmd_LoadFilterConfig: loaded %d filtered commands\n", num_filtered_commands );
+	
+	if( num_filtered_commands > 0 )
+	{
+		Con_Printf( "Cmd_LoadFilterConfig: loaded %d filtered commands\n", num_filtered_commands );
+	}
 }
 
 /*
@@ -629,13 +642,19 @@ Check if a command should be filtered
 static qboolean Cmd_IsFiltered( const char *cmd )
 {
 	int i;
+	
 	if( !cmd_filter_initialized )
 		Cmd_LoadFilterConfig();
+
+	if( num_filtered_commands == 0 )
+		return false;
+	
 	for( i = 0; i < num_filtered_commands; i++ )
 	{
 		if( !Q_stricmp( cmd, filtered_commands[i] ) )
 			return true;
 	}
+	
 	return false;
 }
 
@@ -661,7 +680,6 @@ static void Cmd_FilterCommands( cmdbuf_t *buf )
 
 	if( !cmd_filter_initialized )
 		Cmd_LoadFilterConfig();
-
 	if( num_filtered_commands == 0 || buf->cursize == 0 )
 		return;
 
