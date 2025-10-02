@@ -528,7 +528,7 @@ static void Cmd_UnAlias_f ( void )
 		if( !a ) Con_Printf( "%s not found\n", s );
 	}
 }
-
+	
 /*
 ============
 Cmd_LoadFilterConfig
@@ -543,6 +543,9 @@ static void Cmd_LoadFilterConfig( void )
 	char *data, *p;
 	char line[MAX_CMD_LINE];
 	int len;
+	char *line_start;
+	int line_len;
+	
 	num_filtered_commands = 0;
 	
 	Q_snprintf( filename, sizeof( filename ), "cmdfilter.ini" );
@@ -567,7 +570,7 @@ static void Cmd_LoadFilterConfig( void )
 			p++;
 			
 		if( !*p ) break;
-	
+		
 		if( *p == '/' && *(p+1) == '/' )
 		{
 			while( *p && *p != '\n' )
@@ -582,11 +585,11 @@ static void Cmd_LoadFilterConfig( void )
 			continue;
 		}
 	
-		char *line_start = p;
+		line_start = p;
 		while( *p && *p != '\n' && *p != '\r' )
 			p++;
 			
-		int line_len = p - line_start;
+		line_len = p - line_start;
 		if( line_len >= sizeof( line ) )
 			line_len = sizeof( line ) - 1;
 			
@@ -607,7 +610,6 @@ static void Cmd_LoadFilterConfig( void )
 			Con_Printf( S_ERROR "Cmd_LoadFilterConfig: too many filtered commands, max is %d\n", MAX_FILTERED_CMDS );
 			break;
 		}
-
 		while( *p && ( *p == '\n' || *p == '\r' ) )
 			p++;
 	}
@@ -651,6 +653,11 @@ static void Cmd_FilterCommands( cmdbuf_t *buf )
 	int i, j, quotes, new_size;
 	qboolean skip_line, comment;
 	char *comment_pos;
+	char *cmd_start;
+	char command[64];
+	int k;
+	int line_end;
+	int copy_len;
 
 	if( !cmd_filter_initialized )
 		Cmd_LoadFilterConfig();
@@ -699,16 +706,18 @@ static void Cmd_FilterCommands( cmdbuf_t *buf )
 			if( text[i + j] == '\n' || text[i + j] == '\r' )
 				break;
 		}
-		int line_end = (i + j < buf->cursize) ? j : buf->cursize - i;
+		
+		line_end = (i + j < buf->cursize) ? j : buf->cursize - i;
 
 		if( line_end >= sizeof(line) )
 			line_end = sizeof(line) - 1;
+			
 		memcpy( line, &text[i], comment_pos ? (comment_pos - &text[i]) : line_end );
 		line[comment_pos ? (comment_pos - &text[i]) : line_end] = 0;
 
 		if( !comment_pos )
 		{
-			char *cmd_start = line;
+			cmd_start = line;
 
 			while( *cmd_start && (byte)*cmd_start <= ' ' )
 				cmd_start++;
@@ -718,8 +727,7 @@ static void Cmd_FilterCommands( cmdbuf_t *buf )
 				(*cmd_start >= 'A' && *cmd_start <= 'Z') ||
 				*cmd_start == '_' )
 			{
-				char command[64];
-				int k = 0;
+				k = 0;
 				while( *cmd_start && 
 					   (*cmd_start == '+' || *cmd_start == '-' ||
 					   (*cmd_start >= 'a' && *cmd_start <= 'z') ||
@@ -731,6 +739,7 @@ static void Cmd_FilterCommands( cmdbuf_t *buf )
 					command[k++] = *cmd_start++;
 				}
 				command[k] = 0;
+				
 				if( command[0] && Cmd_IsFiltered( command ) )
 				{
 					skip_line = true;
@@ -738,12 +747,14 @@ static void Cmd_FilterCommands( cmdbuf_t *buf )
 				}
 			}
 		}
+		
 		if( !skip_line )
 		{
-			int copy_len = (i + j < buf->cursize) ? j + 1 : buf->cursize - i;
+			copy_len = (i + j < buf->cursize) ? j + 1 : buf->cursize - i;
 			memcpy( &filtered_text[new_size], &text[i], copy_len );
 			new_size += copy_len;
 		}
+		
 		if( i + j < buf->cursize )
 			i += j + 1;
 		else
