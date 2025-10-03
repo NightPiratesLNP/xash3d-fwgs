@@ -24,8 +24,23 @@
     <string name="using_external_storage">Using: External Storage (xash folder)</string>
     <string name="internal_storage_path">Internal Storage</string>
     <string name="external_storage_path">External Storage</string>
-	<string name="global_settings">Global Settings</string>
+    <string name="global_settings">Global Settings</string>
     <string name="global_command_line">Global Command-line Arguments</string>
     <string name="global_command_line_summary">Always applied to all games</string>
     <string name="global_command_line_dialog">Enter command-line arguments</string>
+
+    <string name="resolution_settings">Resolution Settings</string>
+    <string name="custom_resolution">Custom Resolution</string>
+    <string name="custom_resolution_summary">Set custom width and height</string>
+    <string name="resolution_width">Width</string>
+    <string name="resolution_height">Height</string>
+    <string name="resolution_scale">Resolution Scale</string>
+    <string name="resolution_scale_summary">change res with compatibility</string>
+    <string name="resolution_dialog_title">Enter resolution value</string>
+    <string name="resolution_scale_dialog">Enter scale factor (0.5 - 4.0)</string>
+    <string name="resolution_width_dialog">Enter width (320-3840)</string>
+    <string name="resolution_height_dialog">Enter height (240-2160)</string>
+    <string name="resolution_disabled">Use native resolution</string>
+    <string name="resolution_custom">Custom: %dx%d</string>
+    <string name="resolution_scaled">Scaled: %.1fx (%dx%d)</string>
 </resources>

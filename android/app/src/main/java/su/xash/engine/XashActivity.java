@@ -205,8 +205,34 @@ public class XashActivity extends SDLActivity {
             if (mobile_hacks_gamedirs.contains(gamedir))
                 argv += " -dll @hl";
         }
-
+	applyResolutionSettings();
         Log.d(TAG, "Final argv: " + argv);
         return argv.split(" ");
+    }
+    private void applyResolutionSettings() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String widthStr = prefs.getString("resolution_width", "0");
+        String heightStr = prefs.getString("resolution_height", "0");
+        String scaleStr = prefs.getString("resolution_scale", "1.0");
+
+        int width = Integer.parseInt(widthStr);
+        int height = Integer.parseInt(heightStr);
+        float scale = Float.parseFloat(scaleStr);
+
+        if (width > 0 && height > 0) {
+            nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(width));
+            nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(height));
+            Log.d(TAG, "Setting custom resolution: " + width + "x" + height);
+        } else if (scale != 1.0f) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+            int scaledWidth = (int)(metrics.widthPixels / scale);
+            int scaledHeight = (int)(metrics.heightPixels / scale);
+
+            nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(scaledWidth));
+            nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(scaledHeight));
+            Log.d(TAG, "Setting scaled resolution: " + scaledWidth + "x" + scaledHeight + " (scale: " + scale + ")");
+        }
     }
 }

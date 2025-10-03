@@ -23,4 +23,24 @@
             app:summary="set any arguments" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/resolution_settings">
+        <EditTextPreference
+            app:key="resolution_width"
+            app:title="@string/resolution_width"
+            app:dialogTitle="@string/resolution_width_dialog"
+            app:defaultValue="0" />
+            
+        <EditTextPreference
+            app:key="resolution_height"
+            app:title="@string/resolution_height"
+            app:dialogTitle="@string/resolution_height_dialog"
+            app:defaultValue="0" />
+            
+        <EditTextPreference
+            app:key="resolution_scale"
+            app:title="@string/resolution_scale"
+            app:dialogTitle="@string/resolution_scale_dialog"
+            app:defaultValue="1.0" />
+    </PreferenceCategory>
+
 </PreferenceScreen>
