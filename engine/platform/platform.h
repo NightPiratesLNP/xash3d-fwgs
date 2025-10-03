@@ -70,6 +70,9 @@ void Android_Init( void );
 void *Android_GetNativeObject( const char *name );
 int Android_GetKeyboardHeight( void );
 void Android_Shutdown( void );
+void Android_SetResolution( int width, int height, int fullscreen );
+void Android_GetResolution( int *width, int *height, int *fullscreen );
+const char *Android_GetCurrentResolutionString( void );
 #endif
 
 #if XASH_WIN32

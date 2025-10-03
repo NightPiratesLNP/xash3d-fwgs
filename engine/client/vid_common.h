@@ -44,4 +44,10 @@ void VID_SetDisplayTransform( int *render_w, int *render_h );
 void VID_CheckChanges( void );
 const char *VID_GetModeString( int vid_mode );
 
+// android resolution control
+void R_GetScreenInfo( int *width, int *height, int *fullscreen );
+void R_SetScreenSize( int width, int height, int fullscreen );
+const char *VID_GetCurrentModeString( void );
+void VID_CheckCommandLineResolution( void );
+
 #endif // VID_COMMON

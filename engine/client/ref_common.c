@@ -611,16 +611,28 @@ static void SetWidthAndHeightFromCommandLine( void )
 	}
 
 	R_SaveVideoMode( width, height, width, height, false );
+
+	R_SetScreenSize( width, height, vid_fullscreen.value );
 }
 
 static void SetFullscreenModeFromCommandLine( void )
 {
+	int width, height;
+
 	if( Sys_CheckParm( "-borderless" ))
 		Cvar_DirectSet( &vid_fullscreen, "2" );
 	else if( Sys_CheckParm( "-fullscreen" ))
 		Cvar_DirectSet( &vid_fullscreen, "1" );
 	else if( Sys_CheckParm( "-windowed" ))
 		Cvar_DirectSet( &vid_fullscreen, "0" );
+
+	Sys_GetIntFromCmdLine( "-width", &width );
+	Sys_GetIntFromCmdLine( "-height", &height );
+
+	if( width > 0 && height > 0 )
+	{
+		R_SetScreenSize( width, height, vid_fullscreen.value );
+	}
 }
 
 static void R_CollectRendererNames( void )
@@ -781,6 +793,10 @@ qboolean R_Init( void )
 		Sys_Error( "Can't initialize any renderer. Check your video drivers!\n" );
 		return false;
 	}
+
+	// Check for command line resolution parameters
+	// This must be called AFTER the renderer is loaded
+	VID_CheckCommandLineResolution();
 
 	SCR_Init();
 

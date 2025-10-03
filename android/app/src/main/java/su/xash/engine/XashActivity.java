@@ -27,6 +27,47 @@ public class XashActivity extends SDLActivity {
     private static final String TAG = "XashActivity";
     private SharedPreferences mPreferences;
 
+    public static native void nativeSetResolution(int width, int height, boolean fullscreen);
+    public static native int[] nativeGetResolution();
+    public static native String nativeGetCurrentResolution();
+
+    public void setResolution(int width, int height, boolean fullscreen) {
+        if (mBrokenLibraries) {
+            Log.w(TAG, "Libraries broken, cannot set resolution");
+            return;
+        }
+        try {
+            nativeSetResolution(width, height, fullscreen);
+            Log.d(TAG, "Resolution set to: " + width + "x" + height + " fullscreen: " + fullscreen);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to set resolution", e);
+        }
+    }
+
+    public int[] getResolution() {
+        if (mBrokenLibraries) {
+            return new int[]{640, 480, 1};
+        }
+        try {
+            return nativeGetResolution();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get resolution", e);
+            return new int[]{640, 480, 1};
+        }
+    }
+
+    public String getCurrentResolution() {
+        if (mBrokenLibraries) {
+            return "640x480";
+        }
+        try {
+            return nativeGetCurrentResolution();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get current resolution", e);
+            return "640x480";
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +80,16 @@ public class XashActivity extends SDLActivity {
         }
 
         AndroidBug5497Workaround.assistActivity(this);
+        checkCommandLineResolution();
+    }
+
+    private void checkCommandLineResolution() {
+        String argv = getIntent().getStringExtra("argv");
+        if (argv != null) {
+            if (argv.contains("-width") || argv.contains("-height")) {
+                Log.d(TAG, "Resolution parameters found in command line");
+            }
+        }
     }
 
     @Override
@@ -125,11 +176,9 @@ public class XashActivity extends SDLActivity {
         if (globalArgs.isEmpty()) {
             return originalArgs;
         }
-        
         if (originalArgs == null || originalArgs.trim().isEmpty()) {
             return globalArgs;
         }
-        
         return originalArgs.trim() + " " + globalArgs;
     }
 
@@ -139,13 +188,13 @@ public class XashActivity extends SDLActivity {
             Log.d(TAG, "Game found in internal storage: " + internalDir.getAbsolutePath());
             return getExternalFilesDir(null).getAbsolutePath();
         }
-        
+
         File externalDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash/" + gamedir);
         if (externalDir.exists() && externalDir.isDirectory()) {
             Log.d(TAG, "Game found in external storage: " + externalDir.getAbsolutePath());
             return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
         }
-        
+
         boolean useInternalStorage = mPreferences.getBoolean("storage_toggle", false);
         if (useInternalStorage) {
             Log.d(TAG, "Game not found, using internal storage as default");
@@ -160,11 +209,11 @@ public class XashActivity extends SDLActivity {
     protected String[] getArguments() {
         String gamedir = getIntent().getStringExtra("gamedir");
         if (gamedir == null) gamedir = "valve";
-        
+
         String basedir = findBestBasedir(gamedir);
         nativeSetenv("XASH3D_BASEDIR", basedir);
         nativeSetenv("XASH3D_GAME", gamedir);
-        
+
         Log.d(TAG, "Using basedir: " + basedir + " for game: " + gamedir);
 
         String gamelibdir = getIntent().getStringExtra("gamelibdir");
