@@ -223,19 +223,19 @@ public class XashActivity extends SDLActivity {
         float scale = Float.parseFloat(scaleStr);
 
         if (width > 0 && height > 0) {
-            nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(width));
-            nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(height));
-            Log.d(TAG, "Setting custom resolution: " + width + "x" + height);
+            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(width));
+            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(height));
+            Log.d(TAG, "Setting custom resolution via SDL hints: " + width + "x" + height);
         } else if (scale != 1.0f) {
             DisplayMetrics metrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(metrics);
             
             int scaledWidth = (int)(metrics.widthPixels / scale);
             int scaledHeight = (int)(metrics.heightPixels / scale);
-
-            nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(scaledWidth));
-            nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(scaledHeight));
-            Log.d(TAG, "Setting scaled resolution: " + scaledWidth + "x" + scaledHeight + " (scale: " + scale + ")");
+            
+            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(scaledWidth));
+            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(scaledHeight));
+            Log.d(TAG, "Setting scaled resolution via SDL hints: " + scaledWidth + "x" + scaledHeight + " (scale: " + scale + ")");
         }
     }
 }
