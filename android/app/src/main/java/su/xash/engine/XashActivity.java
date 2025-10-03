@@ -222,20 +222,30 @@ public class XashActivity extends SDLActivity {
         int height = Integer.parseInt(heightStr);
         float scale = Float.parseFloat(scaleStr);
 
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        int surfaceWidth, surfaceHeight;
+        int deviceWidth = metrics.widthPixels;
+        int deviceHeight = metrics.heightPixels;
+        float refreshRate = getWindowManager().getDefaultDisplay().getRefreshRate();
+
         if (width > 0 && height > 0) {
-            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(width));
-            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(height));
-            Log.d(TAG, "Setting custom resolution via SDL hints: " + width + "x" + height);
+            surfaceWidth = width;
+            surfaceHeight = height;
+            Log.d(TAG, "Setting custom resolution: " + width + "x" + height);
         } else if (scale != 1.0f) {
-            DisplayMetrics metrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(metrics);
-            
-            int scaledWidth = (int)(metrics.widthPixels / scale);
-            int scaledHeight = (int)(metrics.heightPixels / scale);
-            
-            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(scaledWidth));
-            SDLActivity.nativeSetHint("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(scaledHeight));
-            Log.d(TAG, "Setting scaled resolution via SDL hints: " + scaledWidth + "x" + scaledHeight + " (scale: " + scale + ")");
+            surfaceWidth = (int)(deviceWidth / scale);
+            surfaceHeight = (int)(deviceHeight / scale);
+            Log.d(TAG, "Setting scaled resolution: " + surfaceWidth + "x" + surfaceHeight + " (scale: " + scale + ")");
+        } else {
+            surfaceWidth = deviceWidth;
+            surfaceHeight = deviceHeight;
+            Log.d(TAG, "Using native resolution: " + surfaceWidth + "x" + surfaceHeight);
         }
+
+        SDLActivity.nativeSetScreenResolution(surfaceWidth, surfaceHeight, deviceWidth, deviceHeight, refreshRate);
+        nativeSetenv("XASH_RESOLUTION_WIDTH", String.valueOf(surfaceWidth));
+        nativeSetenv("XASH_RESOLUTION_HEIGHT", String.valueOf(surfaceHeight));
     }
 }
