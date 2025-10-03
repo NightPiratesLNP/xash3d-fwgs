@@ -225,10 +225,9 @@ void R_SetScreenSize( int width, int height, int fullscreen )
 		Con_Printf( S_ERROR "Invalid resolution: %dx%d\n", width, height );
 		return;
 	}
-
-	Cvar_SetFloat( "width", width );
-	Cvar_SetFloat( "height", height );
-	Cvar_SetFloat( "fullscreen", fullscreen );
+	Cvar_Set( "width", va( "%d", width ) );
+	Cvar_Set( "height", va( "%d", height ) );
+	Cvar_Set( "fullscreen", va( "%d", fullscreen ) );
 	host.renderinfo_changed = true;
 	Con_Printf( "Setting resolution to %dx%d (fullscreen: %d)\n", width, height, fullscreen );
 }
@@ -236,8 +235,6 @@ void R_SetScreenSize( int width, int height, int fullscreen )
 /*
 =================
 VID_GetCurrentModeString
-
-Get current resolution as string
 =================
 */
 const char *VID_GetCurrentModeString( void )
@@ -288,7 +285,7 @@ void VID_CheckCommandLineResolution( void )
 	{
 		int currentWidth, currentHeight;
 		R_GetScreenInfo( &currentWidth, &currentHeight, NULL );
-
+		
 		if( width > 0 && height <= 0 )
 		{
 			height = width * 3 / 4;

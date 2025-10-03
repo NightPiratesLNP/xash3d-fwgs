@@ -617,21 +617,23 @@ static void SetWidthAndHeightFromCommandLine( void )
 
 static void SetFullscreenModeFromCommandLine( void )
 {
+	int fullscreen = vid_fullscreen.value;
 	int width, height;
-
 	if( Sys_CheckParm( "-borderless" ))
-		Cvar_DirectSet( &vid_fullscreen, "2" );
+		fullscreen = 2;
 	else if( Sys_CheckParm( "-fullscreen" ))
-		Cvar_DirectSet( &vid_fullscreen, "1" );
+		fullscreen = 1;
 	else if( Sys_CheckParm( "-windowed" ))
-		Cvar_DirectSet( &vid_fullscreen, "0" );
+		fullscreen = 0;
+
+	Cvar_Set( "fullscreen", va( "%d", fullscreen ) );
 
 	Sys_GetIntFromCmdLine( "-width", &width );
 	Sys_GetIntFromCmdLine( "-height", &height );
 
 	if( width > 0 && height > 0 )
 	{
-		R_SetScreenSize( width, height, vid_fullscreen.value );
+		R_SetScreenSize( width, height, fullscreen );
 	}
 }
 

@@ -219,7 +219,6 @@ Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz 
     }
     else
     {
-        // Engine not initialized, return default values
         res[0] = 640;
         res[1] = 480;
         res[2] = 1;
