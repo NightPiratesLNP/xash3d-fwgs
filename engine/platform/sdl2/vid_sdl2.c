@@ -527,14 +527,6 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
 			return false;
 		}
 
-		// For command line resolutions, use the specified resolution
-		// Otherwise use desktop resolution for borderless
-		if( width > 0 && height > 0 )
-		{
-			got.w = width;
-			got.h = height;
-		}
-
 		if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN_DESKTOP ) < 0 )
 		{
 			Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (borderless): %s", __func__, SDL_GetError( ));
@@ -554,8 +546,7 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
 		}
 
 		if( got.w != want.w || got.h != want.h )
-			Con_Reportf( S_NOTE "Got closest display mode: %ix%i@%i (requested: %ix%i)\n", 
-				got.w, got.h, got.refresh_rate, want.w, want.h );
+			Con_Reportf( S_NOTE "Got closest display mode: %ix%i@%i\n", got.w, got.h, got.refresh_rate );
 
 		if( SDL_SetWindowDisplayMode( host.hWnd, &got ) < 0 )
 		{
@@ -1053,13 +1044,6 @@ qboolean R_Init_Video( const int type )
 rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mode )
 {
 	SDL_DisplayMode displayMode;
-	qboolean command_line_resolution = false;
-
-	if( width > 0 && height > 0 )
-	{
-		command_line_resolution = true;
-		Con_Printf( "Command line resolution: %dx%d window_mode: %d\n", width, height, window_mode );
-	}
 
 	if( SDL_GetCurrentDisplayMode( 0, &displayMode ) < 0 )
 	{
@@ -1069,22 +1053,14 @@ rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mod
 
 	// check our desktop attributes
 	refState.desktopBitsPixel = SDL_BITSPERPIXEL( displayMode.format );
-
-	if( window_mode == WINDOW_MODE_BORDERLESS && !command_line_resolution )
-	{
-		width = displayMode.w;
-		height = displayMode.h;
-	}
-
-	if( !command_line_resolution && (width <= 0 || height <= 0) )
+	if( window_mode == WINDOW_MODE_BORDERLESS )
 	{
 		width = displayMode.w;
 		height = displayMode.h;
 	}
 
 	refState.fullScreen = window_mode != WINDOW_MODE_WINDOWED;
-	Con_Reportf( "%s: Setting video mode to %dx%d %s\n", __func__, width, height, 
-		refState.fullScreen ? "fullscreen" : "windowed" );
+	Con_Reportf( "%s: Setting video mode to %dx%d %s\n", __func__, width, height, refState.fullScreen ? "fullscreen" : "windowed" );
 
 	if( !host.hWnd )
 	{
@@ -1129,38 +1105,24 @@ qboolean VID_SetMode( void )
 	int iScreenWidth, iScreenHeight;
 	rserr_t	err;
 	window_mode_t window_mode;
-	qboolean command_line_resolution = false;
 
-	int cmd_width = 0, cmd_height = 0;
-	Sys_GetIntFromCmdLine( "-width", &cmd_width );
-	Sys_GetIntFromCmdLine( "-height", &cmd_height );
+	iScreenWidth = Cvar_VariableInteger( "width" );
+	iScreenHeight = Cvar_VariableInteger( "height" );
 
-	if( cmd_width > 0 && cmd_height > 0 )
+	if( iScreenWidth < VID_MIN_WIDTH ||
+		iScreenHeight < VID_MIN_HEIGHT )	// trying to get resolution automatically by default
 	{
-		command_line_resolution = true;
-		iScreenWidth = cmd_width;
-		iScreenHeight = cmd_height;
-		Con_Printf( "Using command line resolution: %dx%d\n", iScreenWidth, iScreenHeight );
-	}
-	else
-	{
-		iScreenWidth = Cvar_VariableInteger( "width" );
-		iScreenHeight = Cvar_VariableInteger( "height" );
+#if !defined( DEFAULT_MODE_WIDTH ) || !defined( DEFAULT_MODE_HEIGHT )
+		SDL_DisplayMode mode;
 
-		if( iScreenWidth < VID_MIN_WIDTH || iScreenHeight < VID_MIN_HEIGHT )
-		{
-	#if !defined( DEFAULT_MODE_WIDTH ) || !defined( DEFAULT_MODE_HEIGHT )
-			SDL_DisplayMode mode;
+		SDL_GetDesktopDisplayMode( 0, &mode );
 
-			SDL_GetDesktopDisplayMode( 0, &mode );
-
-			iScreenWidth = mode.w;
-			iScreenHeight = mode.h;
-	#else
-			iScreenWidth = DEFAULT_MODE_WIDTH;
-			iScreenHeight = DEFAULT_MODE_HEIGHT;
-	#endif
-		}
+		iScreenWidth = mode.w;
+		iScreenHeight = mode.h;
+#else
+		iScreenWidth = DEFAULT_MODE_WIDTH;
+		iScreenHeight = DEFAULT_MODE_HEIGHT;
+#endif
 	}
 
 #if XASH_MOBILE_PLATFORM
@@ -1172,27 +1134,12 @@ qboolean VID_SetMode( void )
 #endif
 
 	window_mode = bound( 0, vid_fullscreen.value, WINDOW_MODE_COUNT - 1 );
-
-	if( Sys_CheckParm( "-borderless" ) )
-		window_mode = WINDOW_MODE_BORDERLESS;
-	else if( Sys_CheckParm( "-fullscreen" ) )
-		window_mode = WINDOW_MODE_FULLSCREEN;
-	else if( Sys_CheckParm( "-windowed" ) )
-		window_mode = WINDOW_MODE_WINDOWED;
-
 	SetBits( gl_vsync.flags, FCVAR_CHANGED );
 
 	if(( err = R_ChangeDisplaySettings( iScreenWidth, iScreenHeight, window_mode )) == rserr_ok )
 	{
 		sdlState.prev_width = iScreenWidth;
 		sdlState.prev_height = iScreenHeight;
-
-		if( command_line_resolution )
-		{
-			Cvar_Set( "width", va( "%d", iScreenWidth ) );
-			Cvar_Set( "height", va( "%d", iScreenHeight ) );
-			Cvar_Set( "fullscreen", va( "%d", window_mode ) );
-		}
 	}
 	else
 	{
