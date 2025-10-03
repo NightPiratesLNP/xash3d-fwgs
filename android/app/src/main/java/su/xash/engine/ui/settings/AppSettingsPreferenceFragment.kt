@@ -1,6 +1,7 @@
 package su.xash.engine.ui.settings
 
 import android.app.AlertDialog
+import android.content.Context
 import android.os.Bundle
 import android.widget.EditText
 import androidx.preference.Preference
@@ -8,7 +9,6 @@ import androidx.preference.PreferenceFragmentCompat
 import su.xash.engine.MainActivity
 import su.xash.engine.R
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
 
 class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
     SharedPreferences.OnSharedPreferenceChangeListener {
@@ -24,7 +24,7 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
         preferenceManager.sharedPreferencesName = "app_preferences"
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
 
-        preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        preferences = requireContext().getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
         preferences.registerOnSharedPreferenceChangeListener(this)
 
         gamePathPreference = findPreference("game_path") ?: return
@@ -131,12 +131,12 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
             .setView(editText)
             .setPositiveButton("OK") { dialog, which ->
                 val newArgs = editText.text.toString().trim()
-                preferences.edit().putString("global_arguments", newArgs).commit()
+                preferences.edit().putString("global_arguments", newArgs).apply()
                 updateGlobalArgsSummary()
             }
             .setNegativeButton("Cancel", null)
             .setNeutralButton("Clear") { dialog, which ->
-                preferences.edit().putString("global_arguments", "").commit()
+                preferences.edit().putString("global_arguments", "").apply()
                 updateGlobalArgsSummary()
             }
             .show()
@@ -160,25 +160,25 @@ class AppSettingsPreferenceFragment() : PreferenceFragmentCompat(),
                 val newValue = editText.text.toString().trim()
                 when (type) {
                     "width" -> {
-                        preferences.edit().putString("resolution_width", newValue).commit()
+                        preferences.edit().putString("resolution_width", newValue).apply()
                         if (newValue != "0" && preferences.getString("resolution_height", "0") == "0") {
                             val metrics = resources.displayMetrics
                             val aspectRatio = metrics.heightPixels.toFloat() / metrics.widthPixels.toFloat()
                             val autoHeight = (newValue.toInt() * aspectRatio).toInt()
-                            preferences.edit().putString("resolution_height", autoHeight.toString()).commit()
+                            preferences.edit().putString("resolution_height", autoHeight.toString()).apply()
                         }
                     }
-                    "height" -> preferences.edit().putString("resolution_height", newValue).commit()
-                    "scale" -> preferences.edit().putString("resolution_scale", newValue).commit()
+                    "height" -> preferences.edit().putString("resolution_height", newValue).apply()
+                    "scale" -> preferences.edit().putString("resolution_scale", newValue).apply()
                 }
                 updateResolutionSummaries()
             }
             .setNegativeButton("Cancel", null)
             .setNeutralButton("Clear") { dialog, which ->
                 when (type) {
-                    "width" -> preferences.edit().putString("resolution_width", "0").commit()
-                    "height" -> preferences.edit().putString("resolution_height", "0").commit()
-                    "scale" -> preferences.edit().putString("resolution_scale", "1.0").commit()
+                    "width" -> preferences.edit().putString("resolution_width", "0").apply()
+                    "height" -> preferences.edit().putString("resolution_height", "0").apply()
+                    "scale" -> preferences.edit().putString("resolution_scale", "1.0").apply()
                 }
                 updateResolutionSummaries()
             }

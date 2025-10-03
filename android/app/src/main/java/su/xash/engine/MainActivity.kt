@@ -9,7 +9,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import su.xash.engine.databinding.ActivityMainBinding
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
+import android.content.Context
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        preferences = getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

@@ -10,6 +10,7 @@ import android.preference.PreferenceManager;
 import android.content.SharedPreferences;
 import android.provider.Settings.Secure;
 import android.util.Log;
+import android.util.DisplayMetrics; // BU EKLENDİ
 import android.view.KeyEvent;
 import android.view.WindowManager;
 
@@ -31,7 +32,7 @@ public class XashActivity extends SDLActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mPreferences = getSharedPreferences("app_preferences", MODE_PRIVATE); // DEĞİŞTİRİLDİ
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -205,15 +206,17 @@ public class XashActivity extends SDLActivity {
             if (mobile_hacks_gamedirs.contains(gamedir))
                 argv += " -dll @hl";
         }
-	applyResolutionSettings();
+
+        applyResolutionSettings();
+
         Log.d(TAG, "Final argv: " + argv);
         return argv.split(" ");
     }
+
     private void applyResolutionSettings() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String widthStr = prefs.getString("resolution_width", "0");
-        String heightStr = prefs.getString("resolution_height", "0");
-        String scaleStr = prefs.getString("resolution_scale", "1.0");
+        String widthStr = mPreferences.getString("resolution_width", "0");
+        String heightStr = mPreferences.getString("resolution_height", "0");
+        String scaleStr = mPreferences.getString("resolution_scale", "1.0");
 
         int width = Integer.parseInt(widthStr);
         int height = Integer.parseInt(heightStr);
@@ -226,7 +229,7 @@ public class XashActivity extends SDLActivity {
         } else if (scale != 1.0f) {
             DisplayMetrics metrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(metrics);
-
+            
             int scaledWidth = (int)(metrics.widthPixels / scale);
             int scaledHeight = (int)(metrics.heightPixels / scale);
 
