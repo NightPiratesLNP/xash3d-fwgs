@@ -147,52 +147,14 @@ void Platform_ShellExecute( const char *path, const char *parms )
 
 /*
 ========================
-Android_SetResolution
-========================
-*/
-static void Android_SetResolution( int width, int height, int fullscreen )
-{
-	R_SetScreenSize( width, height, fullscreen );
-}
-
-/*
-========================
-Android_GetResolution
-========================
-*/
-static void Android_GetResolution( int *width, int *height, int *fullscreen )
-{
-	R_GetScreenInfo( width, height, fullscreen );
-}
-
-/*
-========================
-Android_GetCurrentResolutionString
-========================
-*/
-static const char *Android_GetCurrentResolutionString( void )
-{
-	return VID_GetCurrentModeString();
-}
-
-/*
-========================
 Android_JNI_SetResolution
 ========================
 */
-static JNIEXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_su_xash_engine_XashActivity_nativeSetResolution( JNIEnv *env, jclass clazz, jint width, jint height, jboolean fullscreen )
 {
-    extern ref_api_t ref;
-    
-    if( !ref.initialized )
-    {
-        __android_log_print( ANDROID_LOG_WARN, "Xash", "Engine not initialized, cannot set resolution" );
-        return;
-    }
-    
     __android_log_print( ANDROID_LOG_INFO, "Xash", "Setting resolution from Java: %dx%d fullscreen: %d", width, height, fullscreen );
-    Android_SetResolution( width, height, fullscreen ? 1 : 0 );
+    R_SetScreenSize( width, height, fullscreen ? 1 : 0 );
 }
 
 /*
@@ -200,13 +162,12 @@ Java_su_xash_engine_XashActivity_nativeSetResolution( JNIEnv *env, jclass clazz,
 Android_JNI_GetResolution
 ========================
 */
-static JNIEXPORT jintArray JNICALL
+JNIEXPORT jintArray JNICALL
 Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz )
 {
     jintArray result;
     jint *res;
     int width, height, fullscreen;
-    extern ref_api_t ref;
     
     result = (*env)->NewIntArray( env, 3 );
     if( result == NULL )
@@ -220,19 +181,10 @@ Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz 
         return NULL;
     }
     
-    if( ref.initialized )
-    {
-        Android_GetResolution( &width, &height, &fullscreen );
-        res[0] = width;
-        res[1] = height;
-        res[2] = fullscreen;
-    }
-    else
-    {
-        res[0] = 640;
-        res[1] = 480;
-        res[2] = 1;
-    }
+    R_GetScreenInfo( &width, &height, &fullscreen );
+    res[0] = width;
+    res[1] = height;
+    res[2] = fullscreen;
     
     (*env)->ReleaseIntArrayElements( env, result, res, 0 );
     return result;
@@ -243,20 +195,8 @@ Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz 
 Android_JNI_GetCurrentResolution
 ========================
 */
-static JNIEXPORT jstring JNICALL
+JNIEXPORT jstring JNICALL
 Java_su_xash_engine_XashActivity_nativeGetCurrentResolution( JNIEnv *env, jclass clazz )
 {
-    const char *resolution;
-    extern ref_api_t ref;
-    
-    if( ref.initialized )
-    {
-        resolution = Android_GetCurrentResolutionString();
-    }
-    else
-    {
-        resolution = "640x480";
-    }
-    
-    return (*env)->NewStringUTF( env, resolution );
+    return (*env)->NewStringUTF( env, VID_GetCurrentModeString() );
 }

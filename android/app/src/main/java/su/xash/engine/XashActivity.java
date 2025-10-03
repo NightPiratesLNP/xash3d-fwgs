@@ -30,7 +30,7 @@ public class XashActivity extends SDLActivity {
     public static native void nativeSetResolution(int width, int height, boolean fullscreen);
     public static native int[] nativeGetResolution();
     public static native String nativeGetCurrentResolution();
-
+    
     public void setResolution(int width, int height, boolean fullscreen) {
         if (mBrokenLibraries) {
             Log.w(TAG, "Libraries broken, cannot set resolution");
@@ -43,7 +43,7 @@ public class XashActivity extends SDLActivity {
             Log.e(TAG, "Failed to set resolution", e);
         }
     }
-
+    
     public int[] getResolution() {
         if (mBrokenLibraries) {
             return new int[]{640, 480, 1};
@@ -55,7 +55,7 @@ public class XashActivity extends SDLActivity {
             return new int[]{640, 480, 1};
         }
     }
-
+    
     public String getCurrentResolution() {
         if (mBrokenLibraries) {
             return "640x480";
