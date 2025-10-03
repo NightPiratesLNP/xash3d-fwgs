@@ -1067,6 +1067,7 @@ rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mod
 		return rserr_invalid_mode;
 	}
 
+	// check our desktop attributes
 	refState.desktopBitsPixel = SDL_BITSPERPIXEL( displayMode.format );
 
 	if( window_mode == WINDOW_MODE_BORDERLESS && !command_line_resolution )
@@ -1123,13 +1124,6 @@ VID_SetMode
 Set the described video mode
 ==================
 */
-/*
-==================
-VID_SetMode
-
-Set the described video mode
-==================
-*/
 qboolean VID_SetMode( void )
 {
 	int iScreenWidth, iScreenHeight;
@@ -1140,6 +1134,7 @@ qboolean VID_SetMode( void )
 	int cmd_width = 0, cmd_height = 0;
 	Sys_GetIntFromCmdLine( "-width", &cmd_width );
 	Sys_GetIntFromCmdLine( "-height", &cmd_height );
+
 	if( cmd_width > 0 && cmd_height > 0 )
 	{
 		command_line_resolution = true;
@@ -1192,7 +1187,6 @@ qboolean VID_SetMode( void )
 		sdlState.prev_width = iScreenWidth;
 		sdlState.prev_height = iScreenHeight;
 
-		// Update cvars to match the actual resolution
 		if( command_line_resolution )
 		{
 			Cvar_Set( "width", va( "%d", iScreenWidth ) );

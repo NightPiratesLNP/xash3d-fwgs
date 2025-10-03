@@ -597,7 +597,7 @@ static qboolean R_LoadRenderer( const char *refopt, qboolean quiet )
 	return true;
 }
 
-/*static void SetWidthAndHeightFromCommandLine( void )
+static void SetWidthAndHeightFromCommandLine( void )
 {
 	int width, height;
 
@@ -611,30 +611,16 @@ static qboolean R_LoadRenderer( const char *refopt, qboolean quiet )
 	}
 
 	R_SaveVideoMode( width, height, width, height, false );
-
-	R_SetScreenSize( width, height, vid_fullscreen.value );
-}*/
+}
 
 static void SetFullscreenModeFromCommandLine( void )
 {
-	int fullscreen = vid_fullscreen.value;
-	int width, height;
 	if( Sys_CheckParm( "-borderless" ))
-		fullscreen = 2;
+		Cvar_DirectSet( &vid_fullscreen, "2" );
 	else if( Sys_CheckParm( "-fullscreen" ))
-		fullscreen = 1;
+		Cvar_DirectSet( &vid_fullscreen, "1" );
 	else if( Sys_CheckParm( "-windowed" ))
-		fullscreen = 0;
-
-	Cvar_Set( "fullscreen", va( "%d", fullscreen ) );
-
-	Sys_GetIntFromCmdLine( "-width", &width );
-	Sys_GetIntFromCmdLine( "-height", &height );
-
-	if( width > 0 && height > 0 )
-	{
-		R_SetScreenSize( width, height, fullscreen );
-	}
+		Cvar_DirectSet( &vid_fullscreen, "0" );
 }
 
 static void R_CollectRendererNames( void )
@@ -736,7 +722,7 @@ qboolean R_Init( void )
 
 	// Set screen resolution and fullscreen mode if passed in on command line.
 	// this is done after executing video.cfg, as the command line values should take priority.
-	//SetWidthAndHeightFromCommandLine();
+	SetWidthAndHeightFromCommandLine();
 	SetFullscreenModeFromCommandLine();
 
 	R_CollectRendererNames();
@@ -795,10 +781,6 @@ qboolean R_Init( void )
 		Sys_Error( "Can't initialize any renderer. Check your video drivers!\n" );
 		return false;
 	}
-
-	// Check for command line resolution parameters
-	// This must be called AFTER the renderer is loaded
-	VID_CheckCommandLineResolution();
 
 	SCR_Init();
 

@@ -197,53 +197,6 @@ static void VID_Mode_f( void )
 	R_ChangeDisplaySettings( w, h, bound( 0, vid_fullscreen.value, WINDOW_MODE_COUNT - 1 ));
 }
 
-/*
-=================
-R_GetScreenInfo
-
-Get screen info
-=================
-*/
-void R_GetScreenInfo( int *width, int *height, int *fullscreen )
-{
-	if( width ) *width = window_width.value;
-	if( height ) *height = window_height.value;
-	if( fullscreen ) *fullscreen = vid_fullscreen.value;
-}
-
-/*
-=================
-R_SetScreenSize
-
-Set screen size for Android
-=================
-*/
-void R_SetScreenSize( int width, int height, int fullscreen )
-{
-	if( width < 320 || height < 240 || width > 4096 || height > 4096 )
-	{
-		Con_Printf( S_ERROR "Invalid resolution: %dx%d\n", width, height );
-		return;
-	}
-	Cvar_Set( "width", va( "%d", width ) );
-	Cvar_Set( "height", va( "%d", height ) );
-	Cvar_Set( "fullscreen", va( "%d", fullscreen ) );
-	host.renderinfo_changed = true;
-	Con_Printf( "Setting resolution to %dx%d (fullscreen: %d)\n", width, height, fullscreen );
-}
-
-/*
-=================
-VID_GetCurrentModeString
-=================
-*/
-const char *VID_GetCurrentModeString( void )
-{
-	static char mode[32];
-	Q_snprintf( mode, sizeof( mode ), "%i x %i", (int)window_width.value, (int)window_height.value );
-	return mode;
-}
-
 void VID_Init( void )
 {
 	// system screen width and height (don't suppose for change from console at all)

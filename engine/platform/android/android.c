@@ -26,9 +26,6 @@ GNU General Public License for more details.
 #include <SDL.h>
 #endif // XASH_SDL
 
-// Include vid_common.h for resolution functions
-#include "vid_common.h"
-
 struct jnimethods_s
 {
 	JNIEnv *env;
@@ -143,60 +140,4 @@ void Platform_ShellExecute( const char *path, const char *parms )
 #if XASH_SDL
 	SDL_OpenURL( path );
 #endif // XASH_SDL
-}
-
-/*
-========================
-Android_JNI_SetResolution
-========================
-*/
-JNIEXPORT void JNICALL
-Java_su_xash_engine_XashActivity_nativeSetResolution( JNIEnv *env, jclass clazz, jint width, jint height, jboolean fullscreen )
-{
-    __android_log_print( ANDROID_LOG_INFO, "Xash", "Setting resolution from Java: %dx%d fullscreen: %d", width, height, fullscreen );
-    R_SetScreenSize( width, height, fullscreen ? 1 : 0 );
-}
-
-/*
-========================
-Android_JNI_GetResolution
-========================
-*/
-JNIEXPORT jintArray JNICALL
-Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz )
-{
-    jintArray result;
-    jint *res;
-    int width, height, fullscreen;
-    
-    result = (*env)->NewIntArray( env, 3 );
-    if( result == NULL )
-    {
-        return NULL;
-    }
-    
-    res = (*env)->GetIntArrayElements( env, result, NULL );
-    if( res == NULL )
-    {
-        return NULL;
-    }
-    
-    R_GetScreenInfo( &width, &height, &fullscreen );
-    res[0] = width;
-    res[1] = height;
-    res[2] = fullscreen;
-    
-    (*env)->ReleaseIntArrayElements( env, result, res, 0 );
-    return result;
-}
-
-/*
-========================
-Android_JNI_GetCurrentResolution
-========================
-*/
-JNIEXPORT jstring JNICALL
-Java_su_xash_engine_XashActivity_nativeGetCurrentResolution( JNIEnv *env, jclass clazz )
-{
-    return (*env)->NewStringUTF( env, VID_GetCurrentModeString() );
 }
