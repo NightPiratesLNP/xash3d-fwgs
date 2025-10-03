@@ -48,6 +48,5 @@ const char *VID_GetModeString( int vid_mode );
 void R_GetScreenInfo( int *width, int *height, int *fullscreen );
 void R_SetScreenSize( int width, int height, int fullscreen );
 const char *VID_GetCurrentModeString( void );
-void VID_CheckCommandLineResolution( void );
 
 #endif // VID_COMMON

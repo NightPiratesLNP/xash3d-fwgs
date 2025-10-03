@@ -597,7 +597,7 @@ static qboolean R_LoadRenderer( const char *refopt, qboolean quiet )
 	return true;
 }
 
-static void SetWidthAndHeightFromCommandLine( void )
+/*static void SetWidthAndHeightFromCommandLine( void )
 {
 	int width, height;
 
@@ -613,7 +613,7 @@ static void SetWidthAndHeightFromCommandLine( void )
 	R_SaveVideoMode( width, height, width, height, false );
 
 	R_SetScreenSize( width, height, vid_fullscreen.value );
-}
+}*/
 
 static void SetFullscreenModeFromCommandLine( void )
 {
@@ -736,7 +736,7 @@ qboolean R_Init( void )
 
 	// Set screen resolution and fullscreen mode if passed in on command line.
 	// this is done after executing video.cfg, as the command line values should take priority.
-	SetWidthAndHeightFromCommandLine();
+	//SetWidthAndHeightFromCommandLine();
 	SetFullscreenModeFromCommandLine();
 
 	R_CollectRendererNames();

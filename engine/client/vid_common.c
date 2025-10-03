@@ -244,65 +244,6 @@ const char *VID_GetCurrentModeString( void )
 	return mode;
 }
 
-/*
-=================
-VID_CheckCommandLineResolution
-=================
-*/
-static int GetCommandLineIntegerValue( const char* argName )
-{
-	int argIndex = Sys_CheckParm( argName );
-
-	if( argIndex < 1 || argIndex + 1 >= host.argc || !host.argv[argIndex + 1] )
-	{
-		return 0;
-	}
-
-	return Q_atoi( host.argv[argIndex + 1] );
-}
-
-void VID_CheckCommandLineResolution( void )
-{
-	int width = GetCommandLineIntegerValue( "-width" );
-	int height = GetCommandLineIntegerValue( "-height" );
-	int fullscreen = 1;
-
-	if( Sys_CheckParm( "-window" ) || Sys_CheckParm( "-windowed" ) )
-	{
-		fullscreen = 0;
-	}
-	else if( Sys_CheckParm( "-fullscreen" ) )
-	{
-		fullscreen = 1;
-	}
-
-	if( width > 0 && height > 0 )
-	{
-		Con_Printf( "Command line resolution: %dx%d (fullscreen: %d)\n", width, height, fullscreen );
-		R_SetScreenSize( width, height, fullscreen );
-	}
-	else if( width > 0 || height > 0 )
-	{
-		int currentWidth, currentHeight;
-		R_GetScreenInfo( &currentWidth, &currentHeight, NULL );
-		
-		if( width > 0 && height <= 0 )
-		{
-			height = width * 3 / 4;
-		}
-		else if( height > 0 && width <= 0 )
-		{
-			width = height * 4 / 3;
-		}
-
-		if( width > 0 && height > 0 )
-		{
-			Con_Printf( "Command line resolution: %dx%d (fullscreen: %d)\n", width, height, fullscreen );
-			R_SetScreenSize( width, height, fullscreen );
-		}
-	}
-}
-
 void VID_Init( void )
 {
 	// system screen width and height (don't suppose for change from console at all)
