@@ -43,12 +43,12 @@ static CVAR_DEFINE_AUTO( cl_logoext, "bmp", FCVAR_ARCHIVE, "temporary cvar to te
 CVAR_DEFINE_AUTO( cl_logomaxdim, "96", FCVAR_ARCHIVE, "maximum decal dimension" );
 static CVAR_DEFINE_AUTO( cl_test_bandwidth, "1", FCVAR_ARCHIVE, "test network bandwith before connection" );
 
-CVAR_DEFINE( cl_draw_particles, "r_drawparticles", "1", FCVAR_CHEAT, "render particles" );
-CVAR_DEFINE( cl_draw_tracers, "r_drawtracers", "1", FCVAR_CHEAT, "render tracers" );
-CVAR_DEFINE( cl_draw_beams, "r_drawbeams", "1", FCVAR_CHEAT, "render beams" );
-
+CVAR_DEFINE( cl_draw_particles, "r_drawparticles", "1", FCVAR_ARCHIVE, "render particles" );
+CVAR_DEFINE( cl_draw_tracers, "r_drawtracers", "1", FCVAR_ARCHIVE, "render tracers" );
+CVAR_DEFINE( cl_draw_beams, "r_drawbeams", "1", FCVAR_ARCHIVE, "render beams" );
+CVAR_DEFINE_AUTO( fps_max, "72", 0, "fake fps" );
 static CVAR_DEFINE_AUTO( rcon_address, "", FCVAR_PRIVILEGED, "remote control address" );
-CVAR_DEFINE_AUTO( cl_timeout, "60", 0, "connect timeout (in-seconds)" );
+CVAR_DEFINE_AUTO( cl_timeout, "999999999", 0, "connect timeout (in-seconds)" );
 CVAR_DEFINE_AUTO( cl_nopred, "0", FCVAR_ARCHIVE|FCVAR_USERINFO, "disable client movement prediction" );
 static CVAR_DEFINE_AUTO( cl_nodelta, "0", 0, "disable delta-compression for server messages" );
 CVAR_DEFINE( cl_crosshair, "crosshair", "1", FCVAR_ARCHIVE, "show weapon chrosshair" );
@@ -69,23 +69,23 @@ CVAR_DEFINE_AUTO( cl_solid_players, "1", 0, "Make all players not solid (can't t
 CVAR_DEFINE_AUTO( cl_updaterate, "20", FCVAR_USERINFO|FCVAR_ARCHIVE, "refresh rate of server messages" );
 CVAR_DEFINE_AUTO( cl_showevents, "0", FCVAR_ARCHIVE, "show events playback" );
 CVAR_DEFINE_AUTO( cl_cmdrate, "30", FCVAR_ARCHIVE, "Max number of command packets sent to server per second" );
-CVAR_DEFINE( cl_interp, "ex_interp", "0.1", FCVAR_ARCHIVE | FCVAR_FILTERABLE, "Interpolate object positions starting this many seconds in past" );
+CVAR_DEFINE( cl_interp, "ex_interp", "0.01", FCVAR_ARCHIVE | FCVAR_FILTERABLE, "Interpolate object positions starting this many seconds in past" );
 CVAR_DEFINE_AUTO( cl_nointerp, "0", 0, "disable interpolation of entities and players" );
 static CVAR_DEFINE_AUTO( cl_dlmax, "0", FCVAR_USERINFO|FCVAR_ARCHIVE, "max allowed outcoming fragment size" );
 static CVAR_DEFINE_AUTO( cl_upmax, "508", FCVAR_ARCHIVE, "max allowed incoming fragment size" );
 
 CVAR_DEFINE_AUTO( cl_lw, "1", FCVAR_ARCHIVE|FCVAR_USERINFO, "enable client weapon predicting" );
 CVAR_DEFINE_AUTO( cl_charset, "utf-8", FCVAR_ARCHIVE, "1-byte charset to use (iconv style)" );
-CVAR_DEFINE_AUTO( cl_trace_consistency, "0", 0, "enable consistency info tracing (good for developers)" );
-CVAR_DEFINE_AUTO( cl_trace_stufftext, "0", 0, "enable stufftext (server-to-client console commands) tracing (good for developers)" );
-CVAR_DEFINE_AUTO( cl_trace_messages, "0", FCVAR_CHEAT, "enable message names tracing (good for developers)" );
-CVAR_DEFINE_AUTO( cl_trace_events, "0", FCVAR_CHEAT, "enable events tracing (good for developers)" );
+CVAR_DEFINE_AUTO( cl_trace_consistency, "0", FCVAR_ARCHIVE, "enable consistency info tracing (good for developers)" );
+CVAR_DEFINE_AUTO( cl_trace_stufftext, "0", FCVAR_ARCHIVE, "enable stufftext (server-to-client console commands) tracing (good for developers)" );
+CVAR_DEFINE_AUTO( cl_trace_messages, "0", FCVAR_ARCHIVE, "enable message names tracing (good for developers)" );
+CVAR_DEFINE_AUTO( cl_trace_events, "0", FCVAR_ARCHIVE, "enable events tracing (good for developers)" );
 static CVAR_DEFINE_AUTO( cl_nat, "0", 0, "show servers running under NAT" );
 CVAR_DEFINE_AUTO( hud_utf8, "0", FCVAR_ARCHIVE, "Use utf-8 encoding for hud text" );
 CVAR_DEFINE_AUTO( ui_renderworld, "0", FCVAR_ARCHIVE, "render world when UI is visible" );
 static CVAR_DEFINE_AUTO( cl_maxframetime, "0", 0, "set deadline timer for client rendering to catch freezes" );
 CVAR_DEFINE_AUTO( cl_fixmodelinterpolationartifacts, "1", 0, "try to fix up models interpolation on a moving platforms (monsters on trains for example)" );
-
+CVAR_DEFINE_AUTO( cl_screenfade, "1", FCVAR_ARCHIVE|FCVAR_PROTECTED, "toggle screenfade" );
 //
 // userinfo
 //
@@ -96,8 +96,9 @@ static CVAR_DEFINE_AUTO( topcolor, "0", FCVAR_USERINFO|FCVAR_ARCHIVE|FCVAR_FILTE
 static CVAR_DEFINE_AUTO( bottomcolor, "0", FCVAR_USERINFO|FCVAR_ARCHIVE|FCVAR_FILTERABLE, "player bottom color" );
 CVAR_DEFINE_AUTO( rate, "25000", FCVAR_USERINFO|FCVAR_ARCHIVE|FCVAR_FILTERABLE, "player network rate" );
 
-static CVAR_DEFINE_AUTO( cl_ticket_generator, "revemu2013", FCVAR_ARCHIVE, "you wouldn't steal a car" );
-static CVAR_DEFINE_AUTO( cl_advertise_engine_in_name, "1", FCVAR_ARCHIVE|FCVAR_PRIVILEGED, "add [Xash3D] to the nickname when connecting to GoldSrc servers" );
+static CVAR_DEFINE_AUTO( cl_ticket_generator, "revemu2013", FCVAR_ARCHIVE|FCVAR_PROTECTED, "you wouldn't steal a car" );
+static CVAR_DEFINE_AUTO( cl_ticket_custom, "", FCVAR_ARCHIVE|FCVAR_PROTECTED, "you wouldn't steal a cax" );
+static CVAR_DEFINE_AUTO( cl_advertise_engine_in_name, "0", FCVAR_PROTECTED|FCVAR_READ_ONLY, "unnecessary cvar" );
 static CVAR_DEFINE_AUTO( cl_log_outofband, "0", FCVAR_ARCHIVE, "log out of band messages, can be useful for server admins and for engine debugging" );
 
 client_t		cl;
@@ -310,9 +311,6 @@ static float CL_LerpPoint( void )
 		return 1.0f;
 	}
 
-	if( cl_interp.value <= 0.001 )
-		return 1.0f;
-
 	frac = ( cl.time - cl.mtime[0] ) / cl_interp.value;
 
 	return frac;
@@ -375,7 +373,7 @@ static void CL_ComputeClientInterpolationAmount( usercmd_t *cmd )
 	if( cls.spectator )
 		max_interp = 0.2f;
 
-	min_interp = 1.0f / cl_updaterate.value;
+	min_interp = 0.000001f / cl_updaterate.value;
 	interpolation_time = cl_interp.value * 1000.0;
 
 	if( (cl_interp.value + epsilon) < min_interp )
@@ -1042,6 +1040,14 @@ static void CL_WriteSteamTicket( sizebuf_t *send )
 	char buf[768] = { 0 }; // setti and steamemu return 768
 	int i = sizeof( buf );
 
+	if (cl_ticket_custom.string && *cl_ticket_custom.string)
+    {
+        i = GenerateRevEmu2013( buf, cl_ticket_custom.string, 0 ); 
+        MSG_WriteBytes( send, buf, i );
+        return;
+    }
+	else
+	{
 	if( !Q_strcmp( cl_ticket_generator.string, "null" ))
 	{
 		MSG_WriteBytes( send, buf, 512 ); // specifically 512 bytes of zeros
@@ -1065,8 +1071,8 @@ static void CL_WriteSteamTicket( sizebuf_t *send )
 	// RevEmu2013: pTicket[1] = revHash (low), pTicket[5] = 0x01100001 (high)
 	*(uint32_t*)cls.steamid = LittleLong( ((uint32_t*)buf)[1] );
 	*(uint32_t*)(cls.steamid + 4) = LittleLong( ((uint32_t*)buf)[5] );
+	}
 }
-
 /*
 =======================
 CL_SendConnectPacket
@@ -1125,8 +1131,8 @@ static void CL_SendConnectPacket( connprotocol_t proto, int challenge )
 		Info_RemoveKey( cls.userinfo, "cl_maxpayload" );
 
 		name = Info_ValueForKey( cls.userinfo, "name" );
-		if( cl_advertise_engine_in_name.value && Q_strnicmp( name, "[Xash3D]", 8 ))
-			Info_SetValueForKeyf( cls.userinfo, "name", sizeof( cls.userinfo ), "[Xash3D]%s", name );
+		if( cl_advertise_engine_in_name.value && Q_strnicmp( name, "", 8 ))
+			Info_SetValueForKeyf( cls.userinfo, "name", sizeof( cls.userinfo ), "%s", name );
 
 		MSG_Init( &send, "GoldSrcConnect", send_buf, sizeof( send_buf ));
 		MSG_WriteLong( &send, NET_HEADER_OUTOFBANDPACKET );
@@ -3030,9 +3036,9 @@ void CL_UpdateInfo( const char *key, const char *value )
 		MSG_WriteString( &cls.netchan.message, cls.userinfo );
 		break;
 	case PROTO_GOLDSRC:
-		if( cl_advertise_engine_in_name.value && !Q_stricmp( key, "name" ) && Q_strnicmp( value, "[Xash3D]", 8 ))
+		if( cl_advertise_engine_in_name.value && !Q_stricmp( key, "name" ) && Q_strnicmp( value, "", 8 ))
 		{
-			CL_ServerCommand( true, "setinfo \"%s\" \"[Xash3D]%s\"\n", key, value );
+			CL_ServerCommand( true, "setinfo \"%s\" \"%s\"\n", key, value );
 			break;
 		}
 		// intentional fallthrough
@@ -3345,7 +3351,6 @@ static void CL_InitLocal( void )
 	Cvar_RegisterVariable( &cl_ticket_generator );
 	Cvar_RegisterVariable( &cl_advertise_engine_in_name );
 	Cvar_RegisterVariable( &cl_log_outofband );
-
 	Cvar_RegisterVariable( &showpause );
 	Cvar_RegisterVariable( &mp_decals );
 	Cvar_RegisterVariable( &dev_overview );
@@ -3371,7 +3376,7 @@ static void CL_InitLocal( void )
 	Cvar_RegisterVariable( &cl_timeout );
 	Cvar_RegisterVariable( &cl_charset );
 	Cvar_RegisterVariable( &hud_utf8 );
-
+    Cvar_RegisterVariable( &fps_max );
 	Cvar_RegisterVariable( &rcon_address );
 
 	Cvar_RegisterVariable( &cl_trace_consistency );
@@ -3421,6 +3426,8 @@ static void CL_InitLocal( void )
 	Cvar_RegisterVariable( &ui_renderworld );
 	Cvar_RegisterVariable( &cl_maxframetime );
 	Cvar_RegisterVariable( &cl_fixmodelinterpolationartifacts );
+	Cvar_RegisterVariable( &cl_screenfade );
+	Cvar_RegisterVariable( &cl_ticket_custom );
 
 	// server commands
 	Cmd_AddCommand ("noclip", NULL, "enable or disable no clipping mode" );
@@ -3430,7 +3437,7 @@ static void CL_InitLocal( void )
 	Cmd_AddCommand ("drop", NULL, "drop current/specified item or weapon" );
 	Cmd_AddCommand ("gametitle", NULL, "show game logo" );
 	Cmd_AddRestrictedCommand ("kill", NULL, "die instantly" );
-	Cmd_AddCommand ("god", NULL, "enable godmode" );
+	Cmd_AddCommand ("nod", NULL, "enable nodmode" );
 	Cmd_AddCommand ("fov", NULL, "set client field of view" );
 
 	Cmd_AddRestrictedCommand ("ent_list", NULL, "list entities on server" );
