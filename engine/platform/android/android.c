@@ -26,6 +26,9 @@ GNU General Public License for more details.
 #include <SDL.h>
 #endif // XASH_SDL
 
+// Include vid_common.h for resolution functions
+#include "vid_common.h"
+
 struct jnimethods_s
 {
 	JNIEnv *env;
@@ -147,7 +150,7 @@ void Platform_ShellExecute( const char *path, const char *parms )
 Android_SetResolution
 ========================
 */
-void Android_SetResolution( int width, int height, int fullscreen )
+static void Android_SetResolution( int width, int height, int fullscreen )
 {
 	R_SetScreenSize( width, height, fullscreen );
 }
@@ -157,7 +160,7 @@ void Android_SetResolution( int width, int height, int fullscreen )
 Android_GetResolution
 ========================
 */
-void Android_GetResolution( int *width, int *height, int *fullscreen )
+static void Android_GetResolution( int *width, int *height, int *fullscreen )
 {
 	R_GetScreenInfo( width, height, fullscreen );
 }
@@ -167,7 +170,7 @@ void Android_GetResolution( int *width, int *height, int *fullscreen )
 Android_GetCurrentResolutionString
 ========================
 */
-const char *Android_GetCurrentResolutionString( void )
+static const char *Android_GetCurrentResolutionString( void )
 {
 	return VID_GetCurrentModeString();
 }
@@ -177,7 +180,7 @@ const char *Android_GetCurrentResolutionString( void )
 Android_JNI_SetResolution
 ========================
 */
-JNIEXPORT void JNICALL
+static JNIEXPORT void JNICALL
 Java_su_xash_engine_XashActivity_nativeSetResolution( JNIEnv *env, jclass clazz, jint width, jint height, jboolean fullscreen )
 {
     if( !host.initialized )
@@ -185,6 +188,7 @@ Java_su_xash_engine_XashActivity_nativeSetResolution( JNIEnv *env, jclass clazz,
         __android_log_print( ANDROID_LOG_WARN, "Xash", "Engine not initialized, cannot set resolution" );
         return;
     }
+    
     __android_log_print( ANDROID_LOG_INFO, "Xash", "Setting resolution from Java: %dx%d fullscreen: %d", width, height, fullscreen );
     Android_SetResolution( width, height, fullscreen ? 1 : 0 );
 }
@@ -194,22 +198,25 @@ Java_su_xash_engine_XashActivity_nativeSetResolution( JNIEnv *env, jclass clazz,
 Android_JNI_GetResolution
 ========================
 */
-JNIEXPORT jintArray JNICALL
+static JNIEXPORT jintArray JNICALL
 Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz )
 {
     jintArray result;
     jint *res;
     int width, height, fullscreen;
+    
     result = (*env)->NewIntArray( env, 3 );
     if( result == NULL )
     {
         return NULL;
     }
+    
     res = (*env)->GetIntArrayElements( env, result, NULL );
     if( res == NULL )
     {
         return NULL;
     }
+    
     if( host.initialized )
     {
         Android_GetResolution( &width, &height, &fullscreen );
@@ -219,10 +226,12 @@ Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz 
     }
     else
     {
+        // Engine not initialized, return default values
         res[0] = 640;
         res[1] = 480;
         res[2] = 1;
     }
+    
     (*env)->ReleaseIntArrayElements( env, result, res, 0 );
     return result;
 }
@@ -232,10 +241,11 @@ Java_su_xash_engine_XashActivity_nativeGetResolution( JNIEnv *env, jclass clazz 
 Android_JNI_GetCurrentResolution
 ========================
 */
-JNIEXPORT jstring JNICALL
+static JNIEXPORT jstring JNICALL
 Java_su_xash_engine_XashActivity_nativeGetCurrentResolution( JNIEnv *env, jclass clazz )
 {
     const char *resolution;
+    
     if( host.initialized )
     {
         resolution = Android_GetCurrentResolutionString();
@@ -244,5 +254,6 @@ Java_su_xash_engine_XashActivity_nativeGetCurrentResolution( JNIEnv *env, jclass
     {
         resolution = "640x480";
     }
+    
     return (*env)->NewStringUTF( env, resolution );
 }
