@@ -1100,29 +1100,40 @@ VID_SetMode
 Set the described video mode
 ==================
 */
-qboolean VID_SetMode( void )
+static qboolean VID_SetMode( void )
 {
 	int iScreenWidth, iScreenHeight;
 	rserr_t	err;
 	window_mode_t window_mode;
 
-	iScreenWidth = Cvar_VariableInteger( "width" );
-	iScreenHeight = Cvar_VariableInteger( "height" );
-
-	if( iScreenWidth < VID_MIN_WIDTH ||
-		iScreenHeight < VID_MIN_HEIGHT )	// trying to get resolution automatically by default
+#if XASH_ANDROID
+	extern int g_android_custom_width;
+	extern int g_android_custom_height;
+	
+	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
 	{
-#if !defined( DEFAULT_MODE_WIDTH ) || !defined( DEFAULT_MODE_HEIGHT )
-		SDL_DisplayMode mode;
-
-		SDL_GetDesktopDisplayMode( 0, &mode );
-
-		iScreenWidth = mode.w;
-		iScreenHeight = mode.h;
-#else
-		iScreenWidth = DEFAULT_MODE_WIDTH;
-		iScreenHeight = DEFAULT_MODE_HEIGHT;
+		iScreenWidth = g_android_custom_width;
+		iScreenHeight = g_android_custom_height;
+		Con_Printf( "Using Android custom resolution: %dx%d\n", iScreenWidth, iScreenHeight );
+	}
+	else
 #endif
+	{
+		iScreenWidth = Cvar_VariableInteger( "width" );
+		iScreenHeight = Cvar_VariableInteger( "height" );
+
+		if( iScreenWidth < VID_MIN_WIDTH || iScreenHeight < VID_MIN_HEIGHT )
+		{
+#if !defined( DEFAULT_MODE_WIDTH ) || !defined( DEFAULT_MODE_HEIGHT )
+			SDL_DisplayMode mode;
+			SDL_GetDesktopDisplayMode( 0, &mode );
+			iScreenWidth = mode.w;
+			iScreenHeight = mode.h;
+#else
+			iScreenWidth = DEFAULT_MODE_WIDTH;
+			iScreenHeight = DEFAULT_MODE_HEIGHT;
+#endif
+		}
 	}
 
 #if XASH_MOBILE_PLATFORM
@@ -1157,7 +1168,6 @@ qboolean VID_SetMode( void )
 			Sys_Warn( "invalid mode, engine will run in %dx%d", sdlState.prev_width, sdlState.prev_height );
 		}
 
-		// try setting it back to something safe
 		if(( err = R_ChangeDisplaySettings( sdlState.prev_width, sdlState.prev_height, WINDOW_MODE_WINDOWED )) != rserr_ok )
 		{
 			Con_Reportf( S_ERROR "%s: could not revert to safe mode\n", __func__ );
