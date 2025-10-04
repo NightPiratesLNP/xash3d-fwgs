@@ -697,6 +697,11 @@ static qboolean RectFitsInAnyDisplay( const SDL_Rect *rect, const SDL_Rect *disp
 VID_CreateWindow
 =================
 */
+/*
+=================
+VID_CreateWindow
+=================
+*/
 qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 {
 	string wndname;
@@ -707,6 +712,18 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	SDL_Rect rect = { window_xpos.value, window_ypos.value, width, height };
 
 	Q_strncpy( wndname, GI->title, sizeof( wndname ));
+
+#if XASH_ANDROID
+	extern int g_android_custom_width;
+	extern int g_android_custom_height;
+	
+	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
+	{
+		width = g_android_custom_width;
+		height = g_android_custom_height;
+		Con_Printf( "Android: Creating window with custom resolution: %dx%d\n", width, height );
+	}
+#endif
 
 	if( vid_highdpi.value )
 		SetBits( wndFlags, SDL_WINDOW_ALLOW_HIGHDPI );
@@ -737,10 +754,8 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 					display_rects[i] = ( SDL_Rect ){ 0, 0, 0, 0 };
 				}
 			}
-			// Check if the rectangle fits in any display
 			if( !RectFitsInAnyDisplay( &rect, display_rects, num_displays ))
 			{
-				// Rectangle doesn't fit in any display, center it
 				xpos = SDL_WINDOWPOS_CENTERED;
 				ypos = SDL_WINDOWPOS_CENTERED;
 				Con_Printf( S_ERROR "Rectangle does not fit in any display. Centering window.\n" );
@@ -756,7 +771,6 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	else
 	{
 		if( window_mode == WINDOW_MODE_FULLSCREEN )
-			// need input grab only in true fullscreen mode
 			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_INPUT_GRABBED );
 		else
 			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN_DESKTOP );
@@ -776,7 +790,6 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	if( !VID_CreateWindowWithSafeGL( wndname, xpos, ypos, width, height, wndFlags ))
 		return false;
 
-	// update window size if it was maximized, just in case
 	if( FBitSet( SDL_GetWindowFlags( host.hWnd ), SDL_WINDOW_MAXIMIZED|SDL_WINDOW_FULLSCREEN_DESKTOP ) != 0 )
 		SDL_GetWindowSize( host.hWnd, &width, &height );
 
@@ -1114,7 +1127,7 @@ qboolean VID_SetMode( void )
 	{
 		iScreenWidth = g_android_custom_width;
 		iScreenHeight = g_android_custom_height;
-		Con_Printf( "Using Android custom resolution: %dx%d\n", iScreenWidth, iScreenHeight );
+		Con_Printf( "Android: Using custom resolution from args: %dx%d\n", iScreenWidth, iScreenHeight );
 	}
 	else
 #endif
