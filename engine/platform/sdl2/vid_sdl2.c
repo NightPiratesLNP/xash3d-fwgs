@@ -1100,7 +1100,7 @@ VID_SetMode
 Set the described video mode
 ==================
 */
-static qboolean VID_SetMode( void )
+qboolean VID_SetMode( void )
 {
 	int iScreenWidth, iScreenHeight;
 	rserr_t	err;
