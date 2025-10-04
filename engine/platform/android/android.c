@@ -1,17 +1,3 @@
-/*
-android_nosdl.c - android backend
-Copyright (C) 2016-2019 mittorn
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-*/
 #include "platform/platform.h"
 #include "input.h"
 #include "client.h"
@@ -36,9 +22,50 @@ struct jnimethods_s
 	jmethodID saveAndroidID;
 } jni;
 
+int g_android_custom_width = 0;
+int g_android_custom_height = 0;
+
+/*
+========================
+Android_ParseResolutionArgs
+========================
+*/
+void Android_ParseResolutionArgs( void )
+{
+	for( int i = 0; i < host.argc - 1; ++i )
+	{
+		if( !strcmp( host.argv[i], "-width" ))
+			g_android_custom_width = atoi( host.argv[i+1] );
+		if( !strcmp( host.argv[i], "-height" ))
+			g_android_custom_height = atoi( host.argv[i+1] );
+	}
+	
+	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
+	{
+		Con_Printf( "Android: Using custom resolution: %dx%d\n", g_android_custom_width, g_android_custom_height );
+	}
+}
+
+/*
+========================
+Android_GetCustomResolution
+========================
+*/
+qboolean Android_GetCustomResolution( int *width, int *height )
+{
+	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
+	{
+		*width = g_android_custom_width;
+		*height = g_android_custom_height;
+		return true;
+	}
+	return false;
+}
+
 void Android_Init( void )
 {
 	memset( &jni, 0, sizeof( jni ));
+	Android_ParseResolutionArgs();
 
 #if XASH_SDL
 	jni.env = (JNIEnv *)SDL_AndroidGetJNIEnv();
