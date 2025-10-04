@@ -124,11 +124,9 @@ public class XashActivity extends SDLActivity {
         if (globalArgs.isEmpty()) {
             return originalArgs;
         }
-        
         if (originalArgs == null || originalArgs.trim().isEmpty()) {
             return globalArgs;
         }
-        
         return originalArgs.trim() + " " + globalArgs;
     }
 
@@ -138,13 +136,13 @@ public class XashActivity extends SDLActivity {
             Log.d(TAG, "Game found in internal storage: " + internalDir.getAbsolutePath());
             return getExternalFilesDir(null).getAbsolutePath();
         }
-        
+
         File externalDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash/" + gamedir);
         if (externalDir.exists() && externalDir.isDirectory()) {
             Log.d(TAG, "Game found in external storage: " + externalDir.getAbsolutePath());
             return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
         }
-        
+
         boolean useInternalStorage = mPreferences.getBoolean("storage_toggle", false);
         if (useInternalStorage) {
             Log.d(TAG, "Game not found, using internal storage as default");
@@ -155,15 +153,16 @@ public class XashActivity extends SDLActivity {
         }
     }
 
+    // This is the main launcher argument builder. It reads settings and applies them correctly.
     @Override
     protected String[] getArguments() {
         String gamedir = getIntent().getStringExtra("gamedir");
         if (gamedir == null) gamedir = "valve";
-        
+
         String basedir = findBestBasedir(gamedir);
         nativeSetenv("XASH3D_BASEDIR", basedir);
         nativeSetenv("XASH3D_GAME", gamedir);
-        
+
         Log.d(TAG, "Using basedir: " + basedir + " for game: " + gamedir);
 
         String gamelibdir = getIntent().getStringExtra("gamelibdir");
@@ -184,39 +183,54 @@ public class XashActivity extends SDLActivity {
         String argv = getIntent().getStringExtra("argv");
         if (argv == null) argv = "-console -log";
 
+        // --- Resolution settings ---
         String widthStr = mPreferences.getString("resolution_width", "0");
         String heightStr = mPreferences.getString("resolution_height", "0");
         String scaleStr = mPreferences.getString("resolution_scale", "1.0");
 
-        int width = Integer.parseInt(widthStr);
-        int height = Integer.parseInt(heightStr);
-        float scale = Float.parseFloat(scaleStr);
+        int width = 0, height = 0;
+        float scale = 1.0f;
 
+        try { width = Integer.parseInt(widthStr); } catch (Exception e) { width = 0; }
+        try { height = Integer.parseInt(heightStr); } catch (Exception e) { height = 0; }
+        try { scale = Float.parseFloat(scaleStr); } catch (Exception e) { scale = 1.0f; }
+
+        // Log the values for debugging
+        Log.d(TAG, "Resolution preference: width=" + width + " height=" + height + " scale=" + scale);
+
+        // Apply resolution: width/height takes precedence, otherwise use scale
         if (width > 0 && height > 0) {
             argv += " -width " + width + " -height " + height;
             Log.d(TAG, "Added resolution args: -width " + width + " -height " + height);
         } else if (scale != 1.0f) {
-            argv += " -width " + (int)(getRealWidth() / scale) + " -height " + (int)(getRealHeight() / scale);
-            Log.d(TAG, "Added scaled resolution args with scale: " + scale);
+            int scaledWidth = (int)(getRealWidth() / scale);
+            int scaledHeight = (int)(getRealHeight() / scale);
+            argv += " -width " + scaledWidth + " -height " + scaledHeight;
+            Log.d(TAG, "Added scaled resolution args with scale: " + scale +
+                " (" + scaledWidth + "x" + scaledHeight + ")");
+        } else {
+            Log.d(TAG, "No resolution overrides set, using native resolution.");
         }
 
+        // Add global arguments if any
         String globalArgs = getGlobalArguments();
         if (!globalArgs.isEmpty()) {
             Log.d(TAG, "Global arguments found: " + globalArgs);
             argv = combineArguments(argv, globalArgs);
         }
 
+        // Add game argument if needed
         if (!argv.contains("-game") && !gamedir.equals("valve")) {
             argv += " -game " + gamedir;
             Log.d(TAG, "Added -game parameter to argv: " + argv);
         }
 
+        // Mobile hacks DLL arg for certain mods
         if (argv.indexOf(" -dll ") < 0 && gamelibdir == null) {
             final List<String> mobile_hacks_gamedirs = Arrays.asList(new String[]{
                 "aom", "bdlands", "biglolly", "bshift", "caseclosed",
                 "hl_urbicide", "induction", "redempt", "secret",
                 "sewer_beta", "tot", "vendetta" });
-
             if (mobile_hacks_gamedirs.contains(gamedir))
                 argv += " -dll @hl";
         }
