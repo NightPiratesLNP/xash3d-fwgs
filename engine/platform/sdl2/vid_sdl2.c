@@ -645,6 +645,53 @@ static void VID_SetWindowIcon( SDL_Window *hWnd )
 #endif
 }
 
+static qboolean VID_CreateWindowWithSafeGL( const char *wndname, int xpos, int ypos, int w, int h, uint32_t flags )
+{
+	while( glw_state.safe >= SAFE_NO && glw_state.safe < SAFE_LAST )
+	{
+		host.hWnd = SDL_CreateWindow( wndname, xpos, ypos, w, h, flags );
+
+		// we have window, exit loop
+		if( host.hWnd )
+			break;
+
+		Con_Reportf( S_ERROR "%s: couldn't create '%s' with safegl level %d: %s\n", __func__, wndname, glw_state.safe, SDL_GetError());
+
+		glw_state.safe++;
+
+		if( !gl_msaa_samples.value && glw_state.safe == SAFE_NOMSAA )
+			glw_state.safe++; // no need to skip msaa, if we already disabled it
+
+		GL_SetupAttributes(); // re-choose attributes
+
+		// try again create window
+	}
+
+	// window creation has failed...
+	if( glw_state.safe >= SAFE_LAST )
+		return false;
+
+	return true;
+}
+
+static qboolean RectFitsInDisplay( const SDL_Rect *rect, const SDL_Rect *display )
+{
+	return rect->x >= display->x
+		&& rect->y >= display->y
+		&& rect->x + rect->w <= display->x + display->w
+		&& rect->y + rect->h <= display->y + display->h;
+}	
+// Function to check if the rectangle fits in any display
+static qboolean RectFitsInAnyDisplay( const SDL_Rect *rect, const SDL_Rect *display_rects, int num_displays )
+{
+	for( int i = 0; i < num_displays; i++ )
+	{
+		if( RectFitsInDisplay( rect, &display_rects[i] ))
+			return true; // Rectangle fits in this display
+	}
+	return false; // Rectangle does not fit in any display
+}
+
 /*
 =================
 VID_CreateWindow
@@ -652,7 +699,6 @@ VID_CreateWindow
 */
 qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 {
-	// extern deklarasyonları fonksiyonun EN BAŞINDA yap
 #if XASH_ANDROID
 	extern int g_android_custom_width;
 	extern int g_android_custom_height;
@@ -667,7 +713,6 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 
 	Q_strncpy( wndname, GI->title, sizeof( wndname ));
 
-	// Android custom çözünürlük kontrolü
 #if XASH_ANDROID
 	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
 	{
@@ -784,175 +829,6 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 			if( glw_state.safe > SAFE_DONTCARE )
 				return false;
 			GL_SetupAttributes();
-		}
-
-		if( !GL_UpdateContext( ))
-			return false;
-	}
-
-	VID_SaveWindowSize( width, height, maximized );
-
-	return true;
-}
-
-static qboolean RectFitsInDisplay( const SDL_Rect *rect, const SDL_Rect *display )
-{
-	return rect->x >= display->x
-		&& rect->y >= display->y
-		&& rect->x + rect->w <= display->x + display->w
-		&& rect->y + rect->h <= display->y + display->h;
-}	
-// Function to check if the rectangle fits in any display
-static qboolean RectFitsInAnyDisplay( const SDL_Rect *rect, const SDL_Rect *display_rects, int num_displays )
-{
-	for( int i = 0; i < num_displays; i++ )
-	{
-		if( RectFitsInDisplay( rect, &display_rects[i] ))
-			return true; // Rectangle fits in this display
-	}
-	return false; // Rectangle does not fit in any display
-}
-
-/*
-=================
-VID_CreateWindow
-=================
-*/
-/*
-=================
-VID_CreateWindow
-=================
-*/
-qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
-{
-	string wndname;
-	qboolean maximized = vid_maximized.value != 0.0f;
-	Uint32 wndFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_FOCUS;
-	int xpos, ypos;
-	int num_displays = SDL_GetNumVideoDisplays();
-	SDL_Rect rect = { window_xpos.value, window_ypos.value, width, height };
-
-	Q_strncpy( wndname, GI->title, sizeof( wndname ));
-
-#if XASH_ANDROID
-	extern int g_android_custom_width;
-	extern int g_android_custom_height;
-	
-	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
-	{
-		width = g_android_custom_width;
-		height = g_android_custom_height;
-		Con_Printf( "Android: Creating window with custom resolution: %dx%d\n", width, height );
-	}
-#endif
-
-	if( vid_highdpi.value )
-		SetBits( wndFlags, SDL_WINDOW_ALLOW_HIGHDPI );
-	if( !glw_state.software )
-		SetBits( wndFlags, SDL_WINDOW_OPENGL );
-
-	if( window_mode == WINDOW_MODE_WINDOWED )
-	{
-		SDL_Rect *display_rects = ( SDL_Rect * )malloc( num_displays * sizeof( SDL_Rect ));
-
-		SetBits( wndFlags, SDL_WINDOW_RESIZABLE );
-		if( maximized )
-			SetBits( wndFlags, SDL_WINDOW_MAXIMIZED );
-
-		if( !display_rects )
-		{
-			Con_Printf( S_ERROR "Failed to allocate memory for display rects!\n" );
-			xpos = SDL_WINDOWPOS_UNDEFINED;
-			ypos = SDL_WINDOWPOS_UNDEFINED;
-		}
-		else
-		{
-			for( int i = 0; i < num_displays; i++ )
-			{
-				if( SDL_GetDisplayBounds( i, &display_rects[i] ) != 0 )
-				{
-					Con_Printf( S_ERROR "Failed to get bounds for display %d! SDL_Error: %s\n", i, SDL_GetError());
-					display_rects[i] = ( SDL_Rect ){ 0, 0, 0, 0 };
-				}
-			}
-			if( !RectFitsInAnyDisplay( &rect, display_rects, num_displays ))
-			{
-				xpos = SDL_WINDOWPOS_CENTERED;
-				ypos = SDL_WINDOWPOS_CENTERED;
-				Con_Printf( S_ERROR "Rectangle does not fit in any display. Centering window.\n" );
-			}
-			else
-			{
-				xpos = rect.x;
-				ypos = rect.y;
-			}
-		}
-		free( display_rects );
-	}
-	else
-	{
-		if( window_mode == WINDOW_MODE_FULLSCREEN )
-			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_INPUT_GRABBED );
-		else
-			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN_DESKTOP );
-		SetBits( wndFlags, SDL_WINDOW_BORDERLESS );
-		if ( window_xpos.value < 0 || window_ypos.value < 0 )
-		{
-			xpos = SDL_WINDOWPOS_UNDEFINED;
-			ypos = SDL_WINDOWPOS_UNDEFINED;
-		}
-		else
-		{
-			xpos = window_xpos.value;
-			ypos = window_ypos.value;
-		}
-	}
-
-	if( !VID_CreateWindowWithSafeGL( wndname, xpos, ypos, width, height, wndFlags ))
-		return false;
-
-	if( FBitSet( SDL_GetWindowFlags( host.hWnd ), SDL_WINDOW_MAXIMIZED|SDL_WINDOW_FULLSCREEN_DESKTOP ) != 0 )
-		SDL_GetWindowSize( host.hWnd, &width, &height );
-
-	if( window_mode != WINDOW_MODE_WINDOWED )
-	{
-		if( !VID_SetScreenResolution( width, height, window_mode ))
-			return false;
-	}
-	else VID_RestoreScreenResolution();
-
-	VID_SetWindowIcon( host.hWnd );
-	SDL_ShowWindow( host.hWnd );
-
-	if( glw_state.software )
-	{
-		int sdl_renderer = -2;
-		char cmd[64];
-
-		if( Sys_GetParmFromCmdLine( "-sdl_renderer", cmd ))
-			sdl_renderer = Q_atoi( cmd );
-
-		if( sdl_renderer >= -1 )
-		{
-			sw.renderer = SDL_CreateRenderer( host.hWnd, sdl_renderer, 0 );
-			if( !sw.renderer )
-				Con_Printf( S_ERROR "failed to create SDL renderer: %s\n", SDL_GetError() );
-			else
-			{
-				SDL_RendererInfo info;
-				SDL_GetRendererInfo( sw.renderer, &info );
-				Con_Printf( "SDL_Renderer %s initialized\n", info.name );
-			}
-		}
-	}
-	else
-	{
-		while( !GL_CreateContext( ))
-		{
-			glw_state.safe++;
-			if( glw_state.safe > SAFE_DONTCARE )
-				return false;
-			GL_SetupAttributes(); // re-choose attributes
 		}
 
 		if( !GL_UpdateContext( ))
