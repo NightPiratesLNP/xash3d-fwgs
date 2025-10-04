@@ -46,22 +46,6 @@ void Android_ParseResolutionArgs( void )
 	}
 }
 
-/*
-========================
-Android_GetCustomResolution
-========================
-*/
-qboolean Android_GetCustomResolution( int *width, int *height )
-{
-	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
-	{
-		*width = g_android_custom_width;
-		*height = g_android_custom_height;
-		return true;
-	}
-	return false;
-}
-
 void Android_Init( void )
 {
 	memset( &jni, 0, sizeof( jni ));
