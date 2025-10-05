@@ -94,11 +94,12 @@ static qboolean R_CreateScaleRenderTarget( int width, int height )
 		return false;
 	}
 
+	// FBO creation - GitHub Copilot'un önerdiği kod
 	pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
 	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
 
-	// check framebuffer status
-	status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	// check framebuffer status - pgl yerine doğrudan gl kullanıyoruz
+	status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
 	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	if( status != GL_FRAMEBUFFER_COMPLETE )
