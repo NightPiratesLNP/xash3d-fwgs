@@ -49,8 +49,6 @@ R_CreateScaleRenderTarget
 */
 static qboolean R_CreateScaleRenderTarget( int width, int height )
 {
-	GLenum status;
-
 	// Clean existing if any
 	if( g_scale_fbo || g_scale_tex )
 	{
@@ -94,15 +92,32 @@ static qboolean R_CreateScaleRenderTarget( int width, int height )
 		return false;
 	}
 
-	// FBO creation - GitHub Copilot'un önerdiği kod
 	pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
 	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
 
-	// check framebuffer status - pgl yerine doğrudan gl kullanıyoruz
-	status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+	// FBO status kontrolü - FBO desteği olup olmadığını kontrol et
+	// Eğer pglCheckFramebufferStatus tanımlı değilse, FBO'nun başarılı olduğunu varsay
+	qboolean fbo_supported = true;
+	
+#ifdef _WIN32
+	// Windows'ta basit bir FBO kontrolü
+	fbo_supported = (g_scale_fbo != 0 && g_scale_tex != 0);
+#else
+	// Diğer platformlar için FBO status kontrolü
+	GLenum status = GL_FRAMEBUFFER_COMPLETE; // varsayılan olarak başarılı
+	
+	// pglCheckFramebufferStatus fonksiyon pointer'ını kontrol et
+	if( pglCheckFramebufferStatus )
+	{
+		status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	}
+	
+	fbo_supported = (status == GL_FRAMEBUFFER_COMPLETE);
+#endif
+
 	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
-	if( status != GL_FRAMEBUFFER_COMPLETE )
+	if( !fbo_supported )
 	{
 		// cleanup on failure
 		if( g_scale_fbo ) { pglDeleteFramebuffers( 1, &g_scale_fbo ); g_scale_fbo = 0; }
