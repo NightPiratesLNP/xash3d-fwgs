@@ -39,10 +39,19 @@ void Android_ParseResolutionArgs( void )
 		if( !strcmp( host.argv[i], "-height" ))
 			g_android_custom_height = atoi( host.argv[i+1] );
 	}
-	
+
 	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
 	{
 		Con_Printf( "Android: Using custom resolution: %dx%d\n", g_android_custom_width, g_android_custom_height );
+		{
+			char tmp[16];
+
+			snprintf( tmp, sizeof( tmp ), "%d", g_android_custom_width );
+			Cvar_Set( "width", tmp );
+
+			snprintf( tmp, sizeof( tmp ), "%d", g_android_custom_height );
+			Cvar_Set( "height", tmp );
+		}
 	}
 }
 
