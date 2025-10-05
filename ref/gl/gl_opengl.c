@@ -26,8 +26,8 @@ CVAR_DEFINE_AUTO( r_lighting_ambient, "0.3", FCVAR_GLCONFIG, "map ambient lighti
 CVAR_DEFINE_AUTO( r_detailtextures, "1", FCVAR_GLCONFIG, "enable detail textures support" );
 CVAR_DEFINE_AUTO( r_novis, "0", 0, "ignore vis information (perfomance test)" );
 CVAR_DEFINE_AUTO( r_nocull, "0", 0, "ignore frustrum culling (perfomance test)" );
-CVAR_DEFINE_AUTO( r_lockpvs, "0", FCVAR_ARCHIVE, "lockpvs area at current point (pvs test)" );
-CVAR_DEFINE_AUTO( r_lockfrustum, "0", FCVAR_ARCHIVE, "lock frustrum area at current point (cull test)" );
+CVAR_DEFINE_AUTO( r_lockpvs, "0", FCVAR_CHEAT, "lockpvs area at current point (pvs test)" );
+CVAR_DEFINE_AUTO( r_lockfrustum, "0", FCVAR_CHEAT, "lock frustrum area at current point (cull test)" );
 CVAR_DEFINE_AUTO( r_traceglow, "0", FCVAR_GLCONFIG, "cull flares behind models" );
 CVAR_DEFINE_AUTO( gl_round_down, "2", FCVAR_GLCONFIG|FCVAR_READ_ONLY, "round texture sizes to nearest POT value" );
 CVAR_DEFINE( r_vbo, "gl_vbo", "0", FCVAR_GLCONFIG, "draw world using VBO (known to be glitchy)" );
@@ -1151,7 +1151,7 @@ static void GL_InitCommands( void )
 	gEngfuncs.Cvar_RegisterVariable( &r_vbo_detail );
 	gEngfuncs.Cvar_RegisterVariable( &r_large_lightmaps );
 	gEngfuncs.Cvar_RegisterVariable( &r_dlight_virtual_radius );
-    gEngfuncs.Cvar_RegisterVariable( &cl_seebehindwall );
+
 	gEngfuncs.Cvar_RegisterVariable( &gl_extensions );
 	gEngfuncs.Cvar_RegisterVariable( &gl_texture_nearest );
 	gEngfuncs.Cvar_RegisterVariable( &gl_lightmap_nearest );

@@ -6,10 +6,8 @@ import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.content.SharedPreferences;
 import android.provider.Settings.Secure;
 import android.util.Log;
-import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 
@@ -17,273 +15,156 @@ import org.libsdl.app.SDLActivity;
 
 import su.xash.engine.util.AndroidBug5497Workaround;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
 public class XashActivity extends SDLActivity {
-    private boolean mUseVolumeKeys;
-    private String mPackageName;
-    private static final String TAG = "XashActivity";
-    private SharedPreferences mPreferences;
+	private boolean mUseVolumeKeys;
+	private String mPackageName;
+	private static final String TAG = "XashActivity";
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
-        mPreferences = getSharedPreferences("app_preferences", MODE_PRIVATE);
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+			//getWindow().addFlags(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES);
+			getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+		}
 
-        applySDLResolutionHints();
+		AndroidBug5497Workaround.assistActivity(this);
+	}
 
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-        }
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
 
-        AndroidBug5497Workaround.assistActivity(this);
-    }
+		// Now that we don't exit from native code, we need to exit here, resetting
+		// application state (actually global variables that we don't cleanup on exit)
+		//
+		// When the issue with global variables will be resolved, remove that exit() call
+		System.exit(0);
+	}
 
-    private void applySDLResolutionHints() {
-        String widthStr = mPreferences.getString("resolution_width", "0");
-        String heightStr = mPreferences.getString("resolution_height", "0");
-        String scaleStr = mPreferences.getString("resolution_scale", "1.0");
+	@Override
+	protected String[] getLibraries() {
+		return new String[]{"SDL2", "xash"};
+	}
 
-        int width = 0;
-        int height = 0;
-        float scale = 1.0f;
+	@SuppressLint("HardwareIds")
+	private String getAndroidID() {
+		return Secure.getString(getContentResolver(), Secure.ANDROID_ID);
+	}
 
-        try { 
-            width = Integer.parseInt(widthStr); 
-        } catch (Exception e) { 
-            width = 0; 
-        }
-        
-        try { 
-            height = Integer.parseInt(heightStr); 
-        } catch (Exception e) { 
-            height = 0; 
-        }
-        
-        try { 
-            scale = Float.parseFloat(scaleStr); 
-        } catch (Exception e) { 
-            scale = 1.0f; 
-        }
+	@SuppressLint("ApplySharedPref")
+	private void saveAndroidID(String id) {
+		getSharedPreferences("xash_preferences", MODE_PRIVATE).edit().putString("xash_id", id).commit();
+	}
 
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+	private String loadAndroidID() {
+		return getSharedPreferences("xash_preferences", MODE_PRIVATE).getString("xash_id", "");
+	}
 
-        if (width > 0 && height > 0) {
-            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(width));
-            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(height));
-            Log.d(TAG, "Setting SDL resolution hints: " + width + "x" + height);
-        } else if (scale != 1.0f) {
-            int scaledWidth = (int)(metrics.widthPixels / scale);
-            int scaledHeight = (int)(metrics.heightPixels / scale);
-            
-            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(scaledWidth));
-            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(scaledHeight));
-            Log.d(TAG, "Setting scaled SDL resolution: " + scaledWidth + "x" + scaledHeight + " (scale: " + scale + ")");
-        }
-    }
+	@Override
+	public String getCallingPackage() {
+		if (mPackageName != null) {
+			return mPackageName;
+		}
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        System.exit(0);
-    }
+		return super.getCallingPackage();
+	}
 
-    @Override
-    protected String[] getLibraries() {
-        return new String[]{"SDL2", "xash"};
-    }
+	private AssetManager getAssets(boolean isEngine) {
+		AssetManager am = null;
 
-    @SuppressLint("HardwareIds")
-    private String getAndroidID() {
-        return Secure.getString(getContentResolver(), Secure.ANDROID_ID);
-    }
+		if (isEngine) {
+			am = getAssets();
+		} else {
+			try {
+				am = getPackageManager().getResourcesForApplication(getCallingPackage()).getAssets();
+			} catch (Exception e) {
+				Log.e(TAG, "Unable to load mod assets!");
+				e.printStackTrace();
+			}
+		}
 
-    @SuppressLint("ApplySharedPref")
-    private void saveAndroidID(String id) {
-        getSharedPreferences("xash_preferences", MODE_PRIVATE).edit().putString("xash_id", id).commit();
-    }
+		return am;
+	}
 
-    private String loadAndroidID() {
-        return getSharedPreferences("xash_preferences", MODE_PRIVATE).getString("xash_id", "");
-    }
+	private String[] getAssetsList(boolean isEngine, String path) {
+		AssetManager am = getAssets(isEngine);
 
-    @Override
-    public String getCallingPackage() {
-        if (mPackageName != null) {
-            return mPackageName;
-        }
-        return super.getCallingPackage();
-    }
+		try {
+			return am.list(path);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-    private AssetManager getAssets(boolean isEngine) {
-        AssetManager am = null;
-        if (isEngine) {
-            am = getAssets();
-        } else {
-            try {
-                am = getPackageManager().getResourcesForApplication(getCallingPackage()).getAssets();
-            } catch (Exception e) {
-                Log.e(TAG, "Unable to load mod assets!");
-                e.printStackTrace();
-            }
-        }
-        return am;
-    }
+		return new String[]{};
+	}
 
-    private String[] getAssetsList(boolean isEngine, String path) {
-        AssetManager am = getAssets(isEngine);
-        try {
-            return am.list(path);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new String[]{};
-    }
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		if (SDLActivity.mBrokenLibraries) {
+			return false;
+		}
 
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        if (SDLActivity.mBrokenLibraries) {
-            return false;
-        }
-        int keyCode = event.getKeyCode();
-        if (!mUseVolumeKeys) {
-            if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_CAMERA || keyCode == KeyEvent.KEYCODE_ZOOM_IN || keyCode == KeyEvent.KEYCODE_ZOOM_OUT) {
-                return false;
-            }
-        }
-        return getWindow().superDispatchKeyEvent(event);
-    }
+		int keyCode = event.getKeyCode();
+		if (!mUseVolumeKeys) {
+			if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_CAMERA || keyCode == KeyEvent.KEYCODE_ZOOM_IN || keyCode == KeyEvent.KEYCODE_ZOOM_OUT) {
+				return false;
+			}
+		}
 
-    private String getGlobalArguments() {
-        String globalArgs = mPreferences.getString("global_arguments", "");
-        if (globalArgs != null && !globalArgs.trim().isEmpty()) {
-            return globalArgs.trim();
-        }
-        return "";
-    }
+		return getWindow().superDispatchKeyEvent(event);
+	}
 
-    private String combineArguments(String originalArgs, String globalArgs) {
-        if (globalArgs.isEmpty()) {
-            return originalArgs;
-        }
-        if (originalArgs == null || originalArgs.trim().isEmpty()) {
-            return globalArgs;
-        }
-        return originalArgs.trim() + " " + globalArgs;
-    }
+	// TODO: REMOVE LATER, temporary launchers support?
+	@Override
+	protected String[] getArguments() {
+		String gamedir = getIntent().getStringExtra("gamedir");
+		if (gamedir == null) gamedir = "valve";
+		nativeSetenv("XASH3D_GAME", gamedir);
 
-    private String findBestBasedir(String gamedir) {
-        File internalDir = new File(getExternalFilesDir(null).getAbsolutePath() + "/" + gamedir);
-        if (internalDir.exists() && internalDir.isDirectory()) {
-            Log.d(TAG, "Game found in internal storage: " + internalDir.getAbsolutePath());
-            return getExternalFilesDir(null).getAbsolutePath();
-        }
+		String gamelibdir = getIntent().getStringExtra("gamelibdir");
+		if (gamelibdir != null) nativeSetenv("XASH3D_GAMELIBDIR", gamelibdir);
 
-        File externalDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash/" + gamedir);
-        if (externalDir.exists() && externalDir.isDirectory()) {
-            Log.d(TAG, "Game found in external storage: " + externalDir.getAbsolutePath());
-            return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
-        }
+		String pakfile = getIntent().getStringExtra("pakfile");
+		if (pakfile != null) nativeSetenv("XASH3D_EXTRAS_PAK2", pakfile);
 
-        boolean useInternalStorage = mPreferences.getBoolean("storage_toggle", false);
-        if (useInternalStorage) {
-            Log.d(TAG, "Game not found, using internal storage as default");
-            return getExternalFilesDir(null).getAbsolutePath();
-        } else {
-            Log.d(TAG, "Game not found, using external storage as default");
-            return Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
-        }
-    }
+		String basedir = getIntent().getStringExtra("basedir");
+		if (basedir != null) {
+			nativeSetenv("XASH3D_BASEDIR", basedir);
+		} else {
+			String rootPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/xash";
+			nativeSetenv("XASH3D_BASEDIR", rootPath);
+		}
 
-    @Override
-    protected String[] getArguments() {
-        String gamedir = getIntent().getStringExtra("gamedir");
-        if (gamedir == null) gamedir = "valve";
+		mUseVolumeKeys = getIntent().getBooleanExtra("usevolume", false);
+		mPackageName = getIntent().getStringExtra("package");
 
-        String basedir = findBestBasedir(gamedir);
-        nativeSetenv("XASH3D_BASEDIR", basedir);
-        nativeSetenv("XASH3D_GAME", gamedir);
+		String[] env = getIntent().getStringArrayExtra("env");
+		if (env != null) {
+			for (int i = 0; i < env.length; i += 2)
+				nativeSetenv(env[i], env[i + 1]);
+		}
 
-        Log.d(TAG, "Using basedir: " + basedir + " for game: " + gamedir);
+		String argv = getIntent().getStringExtra("argv");
+		if (argv == null) argv = "-console -log";
 
-        String gamelibdir = getIntent().getStringExtra("gamelibdir");
-        if (gamelibdir != null) nativeSetenv("XASH3D_GAMELIBDIR", gamelibdir);
+		// stupid check but should be enough
+		if (argv.indexOf(" -dll ") < 0 && gamelibdir == null) {
+			// mobile_hacks hlsdk-portable branch allows us to have few more mods
+			final List<String> mobile_hacks_gamedirs = Arrays.asList(new String[]{
+				"aom", "bdlands", "biglolly", "bshift", "caseclosed",
+				"hl_urbicide", "induction", "redempt", "secret",
+				"sewer_beta", "tot", "vendetta" });
 
-        String pakfile = getIntent().getStringExtra("pakfile");
-        if (pakfile != null) nativeSetenv("XASH3D_EXTRAS_PAK2", pakfile);
+			if (mobile_hacks_gamedirs.contains(gamedir))
+				argv += " -dll @hl";
+		}
 
-        mUseVolumeKeys = getIntent().getBooleanExtra("usevolume", false);
-        mPackageName = getIntent().getStringExtra("package");
-
-        String[] env = getIntent().getStringArrayExtra("env");
-        if (env != null) {
-            for (int i = 0; i < env.length; i += 2)
-                nativeSetenv(env[i], env[i + 1]);
-        }
-
-        String argv = getIntent().getStringExtra("argv");
-        if (argv == null) argv = "-console -log";
-
-        String widthStr = mPreferences.getString("resolution_width", "0");
-        String heightStr = mPreferences.getString("resolution_height", "0");
-        String scaleStr = mPreferences.getString("resolution_scale", "1.0");
-
-        int width = 0;
-        int height = 0;
-        float scale = 1.0f;
-
-        try { width = Integer.parseInt(widthStr); } catch (Exception e) { width = 0; }
-        try { height = Integer.parseInt(heightStr); } catch (Exception e) { height = 0; }
-        try { scale = Float.parseFloat(scaleStr); } catch (Exception e) { scale = 1.0f; }
-
-        if (width > 0 && height > 0) {
-            argv += " -width " + width + " -height " + height;
-            Log.d(TAG, "Added resolution args: -width " + width + " -height " + height);
-        } else if (scale != 1.0f) {
-            int scaledWidth = (int)(getRealWidth() / scale);
-            int scaledHeight = (int)(getRealHeight() / scale);
-            argv += " -width " + scaledWidth + " -height " + scaledHeight;
-            Log.d(TAG, "Added scaled resolution args: " + scaledWidth + "x" + scaledHeight);
-        }
-
-        String globalArgs = getGlobalArguments();
-        if (!globalArgs.isEmpty()) {
-            Log.d(TAG, "Global arguments found: " + globalArgs);
-            argv = combineArguments(argv, globalArgs);
-        }
-
-        if (!argv.contains("-game") && !gamedir.equals("valve")) {
-            argv += " -game " + gamedir;
-            Log.d(TAG, "Added -game parameter to argv: " + argv);
-        }
-
-        if (argv.indexOf(" -dll ") < 0 && gamelibdir == null) {
-            final List<String> mobile_hacks_gamedirs = Arrays.asList(new String[]{
-                "aom", "bdlands", "biglolly", "bshift", "caseclosed",
-                "hl_urbicide", "induction", "redempt", "secret",
-                "sewer_beta", "tot", "vendetta" });
-            if (mobile_hacks_gamedirs.contains(gamedir))
-                argv += " -dll @hl";
-        }
-
-        Log.d(TAG, "Final argv: " + argv);
-        return argv.split(" ");
-    }
-
-    private int getRealWidth() {
-        DisplayMetrics realMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getRealMetrics(realMetrics);
-        return realMetrics.widthPixels;
-    }
-
-    private int getRealHeight() {
-        DisplayMetrics realMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getRealMetrics(realMetrics);
-        return realMetrics.heightPixels;
-    }
+		return argv.split(" ");
+	}
 }

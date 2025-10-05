@@ -1,3 +1,17 @@
+/*
+android_nosdl.c - android backend
+Copyright (C) 2016-2019 mittorn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 #include "platform/platform.h"
 #include "input.h"
 #include "client.h"
@@ -22,43 +36,9 @@ struct jnimethods_s
 	jmethodID saveAndroidID;
 } jni;
 
-int g_android_custom_width = 0;
-int g_android_custom_height = 0;
-
-/*
-========================
-Android_ParseResolutionArgs
-========================
-*/
-void Android_ParseResolutionArgs( void )
-{
-	for( int i = 0; i < host.argc - 1; ++i )
-	{
-		if( !strcmp( host.argv[i], "-width" ))
-			g_android_custom_width = atoi( host.argv[i+1] );
-		if( !strcmp( host.argv[i], "-height" ))
-			g_android_custom_height = atoi( host.argv[i+1] );
-	}
-
-	if( g_android_custom_width > 0 && g_android_custom_height > 0 )
-	{
-		Con_Printf( "Android: Using custom resolution: %dx%d\n", g_android_custom_width, g_android_custom_height );
-
-		char tmp[16];
-
-		snprintf( tmp, sizeof( tmp ), "%d", g_android_custom_width );
-		Cvar_Set( "width", tmp );
-
-		snprintf( tmp, sizeof( tmp ), "%d", g_android_custom_height );
-		Cvar_Set( "height", tmp );
-	}
-}
-
 void Android_Init( void )
 {
 	memset( &jni, 0, sizeof( jni ));
-
-	Android_ParseResolutionArgs();
 
 #if XASH_SDL
 	jni.env = (JNIEnv *)SDL_AndroidGetJNIEnv();
@@ -73,8 +53,14 @@ void Android_Init( void )
 	SDL_SetHint( SDL_HINT_ANDROID_BLOCK_ON_PAUSE, "0" );
 	SDL_SetHint( SDL_HINT_ANDROID_BLOCK_ON_PAUSE_PAUSEAUDIO, "0" );
 	SDL_SetHint( SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "1" );
-#endif
+#endif // !XASH_SDL
 }
+
+/*
+========================
+Android_GetNativeObject
+========================
+*/
 
 void *Android_GetNativeObject( const char *name )
 {
@@ -90,6 +76,11 @@ void *Android_GetNativeObject( const char *name )
 	return NULL;
 }
 
+/*
+========================
+Android_GetAndroidID
+========================
+*/
 const char *Android_GetAndroidID( void )
 {
 	static char id[32];
@@ -107,6 +98,11 @@ const char *Android_GetAndroidID( void )
 	return id;
 }
 
+/*
+========================
+Android_LoadID
+========================
+*/
 const char *Android_LoadID( void )
 {
 	static char id[32];
@@ -122,6 +118,11 @@ const char *Android_LoadID( void )
 	return id;
 }
 
+/*
+========================
+Android_SaveID
+========================
+*/
 void Android_SaveID( const char *id )
 {
 	jstring JStr = (*jni.env)->NewStringUTF( jni.env, id );
@@ -129,9 +130,14 @@ void Android_SaveID( const char *id )
 	(*jni.env)->DeleteLocalRef( jni.env, JStr );
 }
 
+/*
+========================
+Android_ShellExecute
+========================
+*/
 void Platform_ShellExecute( const char *path, const char *parms )
 {
 #if XASH_SDL
 	SDL_OpenURL( path );
-#endif
+#endif // XASH_SDL
 }

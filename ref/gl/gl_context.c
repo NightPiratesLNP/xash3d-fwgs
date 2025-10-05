@@ -1,8 +1,22 @@
+/*
+vid_sdl.c - SDL vid component
+Copyright (C) 2018 a1batross
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
+
+// GL API function pointers, if any, reside in this translation unit
 #define APIENTRY_LINKAGE
 #include "gl_local.h"
 #include "gl_export.h"
-#include "cvar.h"
-#include "ref_scale.h"
 
 #if XASH_GL4ES
 #include "gl4es/include/gl4esinit.h"
@@ -12,176 +26,6 @@ ref_api_t      gEngfuncs;
 ref_globals_t *gpGlobals;
 ref_client_t  *gp_cl;
 ref_host_t    *gp_host;
-
-/* Global state for optional internal scaling render target (FBO) */
-static GLuint g_scale_fbo = 0;
-static GLuint g_scale_tex = 0;
-static int    g_scale_rt_width = 0;
-static int    g_scale_rt_height = 0;
-static float  g_scale_x = 1.0f;
-static float  g_scale_y = 1.0f;
-
-/*
-========================
-R_CreateScaleRenderTarget
-========================
-*/
-qboolean R_CreateScaleRenderTarget( int width, int height )
-{
-	qboolean fbo_supported;
-
-	// Clean existing if any
-	if( g_scale_fbo || g_scale_tex )
-	{
-		if( g_scale_fbo )
-		{
-			pglDeleteFramebuffers( 1, &g_scale_fbo );
-			g_scale_fbo = 0;
-		}
-		if( g_scale_tex )
-		{
-			pglDeleteTextures( 1, &g_scale_tex );
-			g_scale_tex = 0;
-		}
-		g_scale_rt_width = g_scale_rt_height = 0;
-		g_scale_x = g_scale_y = 1.0f;
-	}
-
-	if( width <= 0 || height <= 0 )
-		return false;
-
-	// Create texture for render target
-	pglGenTextures( 1, &g_scale_tex );
-	if( !g_scale_tex )
-		return false;
-
-	pglBindTexture( GL_TEXTURE_2D, g_scale_tex );
-	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	// allocate texture storage (RGBA8)
-	pglTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-	pglBindTexture( GL_TEXTURE_2D, 0 );
-
-	// Create framebuffer and attach texture
-	pglGenFramebuffers( 1, &g_scale_fbo );
-	if( !g_scale_fbo )
-	{
-		pglDeleteTextures( 1, &g_scale_tex );
-		g_scale_tex = 0;
-		return false;
-	}
-
-	pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
-	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
-
-	// Basit FBO kontrolü - pglCheckFramebufferStatus kullanmadan
-	// Eğer FBO ve texture başarıyla oluşturulduysa başarılı kabul et
-	fbo_supported = (g_scale_fbo != 0 && g_scale_tex != 0); // sadece atama kaldı
-
-	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-
-	if( !fbo_supported )
-	{
-		// cleanup on failure
-		if( g_scale_fbo ) { pglDeleteFramebuffers( 1, &g_scale_fbo ); g_scale_fbo = 0; }
-		if( g_scale_tex ) { pglDeleteTextures( 1, &g_scale_tex ); g_scale_tex = 0; }
-		return false;
-	}
-
-	g_scale_rt_width = width;
-	g_scale_rt_height = height;
-	return true;
-}
-
-/*
-========================
-R_DestroyScaleRenderTarget
-========================
-*/
-void R_DestroyScaleRenderTarget( void ) // static kaldırıldı
-{
-	if( g_scale_fbo )
-	{
-		pglDeleteFramebuffers( 1, &g_scale_fbo );
-		g_scale_fbo = 0;
-	}
-	if( g_scale_tex )
-	{
-		pglDeleteTextures( 1, &g_scale_tex );
-		g_scale_tex = 0;
-	}
-	g_scale_rt_width = g_scale_rt_height = 0;
-	g_scale_x = g_scale_y = 1.0f;
-}
-
-/*
-========================
-R_BindRenderTargetForScene
-========================
-*/
-void R_BindRenderTargetForScene( void ) // static kaldırıldı
-{
-	if( g_scale_fbo )
-		pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
-	else
-		pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-}
-
-/*
-========================
-R_BlitScaleRenderTargetToScreen
-========================
-*/
-void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h ) // static kaldırıldı
-{
-	GLboolean blendEnabled, depthTestEnabled;
-
-	if( !g_scale_fbo || !g_scale_tex )
-		return;
-
-	// Bind default framebuffer for drawing to screen
-	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-
-	// Simple orthographic full-screen blit - keep state changes minimal and try to restore states that are commonly used.
-	blendEnabled = pglIsEnabled( GL_BLEND );
-	depthTestEnabled = pglIsEnabled( GL_DEPTH_TEST );
-
-	pglDisable( GL_DEPTH_TEST );
-	pglDisable( GL_CULL_FACE );
-	pglEnable( GL_TEXTURE_2D );
-
-	pglMatrixMode( GL_PROJECTION );
-	pglPushMatrix();
-	pglLoadIdentity();
-	pglOrtho( 0, screen_w, 0, screen_h, -1, 1 );
-
-	pglMatrixMode( GL_MODELVIEW );
-	pglPushMatrix();
-	pglLoadIdentity();
-
-	pglActiveTexture( XASH_TEXTURE0 );
-	pglBindTexture( GL_TEXTURE_2D, g_scale_tex );
-
-	// draw a quad that covers the whole screen
-	pglBegin( GL_QUADS );
-		pglTexCoord2f( 0.0f, 0.0f ); pglVertex2f( 0.0f, 0.0f );
-		pglTexCoord2f( 1.0f, 0.0f ); pglVertex2f( (GLfloat)screen_w, 0.0f );
-		pglTexCoord2f( 1.0f, 1.0f ); pglVertex2f( (GLfloat)screen_w, (GLfloat)screen_h );
-		pglTexCoord2f( 0.0f, 1.0f ); pglVertex2f( 0.0f, (GLfloat)screen_h );
-	pglEnd();
-
-	pglBindTexture( GL_TEXTURE_2D, 0 );
-
-	pglPopMatrix();
-	pglMatrixMode( GL_PROJECTION );
-	pglPopMatrix();
-	pglMatrixMode( GL_MODELVIEW );
-
-	if( depthTestEnabled ) pglEnable( GL_DEPTH_TEST ); else pglDisable( GL_DEPTH_TEST );
-	if( blendEnabled ) pglEnable( GL_BLEND ); else pglDisable( GL_BLEND );
-}
 
 void _Mem_Free( void *data, const char *filename, int fileline )
 {
@@ -207,67 +51,6 @@ static const byte *R_GetTextureOriginalBuffer( unsigned int idx )
 		return NULL;
 
 	return glt->original->buffer;
-}
-
-/*
-========================
-R_SetDisplayTransform
-========================
- Provide limited support for scale transforms by creating an internal render target
- (smaller render resolution) and blitting it to the screen. Rotation/offsets still
- log "not supported" as before.
- Returns true if the requested transform is accepted (or partially accepted).
-========================
-*/
-qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y ) // static kaldırıldı
-{
-	qboolean ret = true;
-	int screen_w, screen_h, rt_w, rt_h;
-
-	if( rotate > 0 )
-	{
-		//gEngfuncs.Con_Printf( "rotation transform not supported\n" );
-		ret = false;
-	}
-
-	if( offset_x || offset_y )
-	{
-		//gEngfuncs.Con_Printf( "offset transform not supported\n" );
-		ret = false;
-	}
-
-	if( scale_x != 1.0f || scale_y != 1.0f )
-	{
-		screen_w = gpGlobals->width;
-		screen_h = gpGlobals->height;
-
-		if( screen_w <= 0 ) screen_w = 640;
-		if( screen_h <= 0 ) screen_h = 480;
-
-		rt_w = (int)( screen_w * (1.0f / scale_x) );
-		rt_h = (int)( screen_h * (1.0f / scale_y) );
-
-		if( rt_w < 1 ) rt_w = 1;
-		if( rt_h < 1 ) rt_h = 1;
-
-		if( R_CreateScaleRenderTarget( rt_w, rt_h ) )
-		{
-			g_scale_x = scale_x;
-			g_scale_y = scale_y;
-			//Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
-		}
-		else
-		{
-			//gEngfuncs.Con_Printf( "scale transform not supported (FBO creation failed)\n" );
-			ret = false;
-		}
-	}
-	else
-	{
-		R_DestroyScaleRenderTarget();
-	}
-
-	return ret;
 }
 
 /*
@@ -577,6 +360,30 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 	for( i = 0; i < SKYBOX_MAX_SIDES; i++ )
 		tr.skyboxTextures[i] = skyboxTextures[i];
+}
+
+static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
+{
+	qboolean ret = true;
+	if( rotate > 0 )
+	{
+		gEngfuncs.Con_Printf("rotation transform not supported\n");
+		ret = false;
+	}
+
+	if( offset_x || offset_y )
+	{
+		gEngfuncs.Con_Printf("offset transform not supported\n");
+		ret = false;
+	}
+
+	if( scale_x != 1.0f || scale_y != 1.0f )
+	{
+		gEngfuncs.Con_Printf("scale transform not supported\n");
+		ret = false;
+	}
+
+	return ret;
 }
 
 static void GAME_EXPORT VGUI_UploadTextureBlock( int drawX, int drawY, const byte *rgba, int blockWidth, int blockHeight )

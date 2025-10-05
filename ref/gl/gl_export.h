@@ -35,12 +35,6 @@ GNU General Public License for more details.
 	#define XASH_GLES 1
 #endif // XASH_GLES3COMPAT
 
-qboolean R_CreateScaleRenderTarget( int width, int height );
-void R_DestroyScaleRenderTarget( void );
-void R_BindRenderTargetForScene( void );
-void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h );
-qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y );
-
 typedef uint GLenum;
 typedef byte GLboolean;
 typedef uint GLbitfield;
@@ -61,22 +55,6 @@ typedef int GLsizeiptrARB;
 typedef char GLcharARB;
 typedef uint GLhandleARB;
 typedef float GLmatrix[16];
-
-#ifndef GL_FRAMEBUFFER
-#define GL_FRAMEBUFFER 0x8D40
-#endif
-
-#ifndef GL_FRAMEBUFFER_COMPLETE
-#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
-#endif
-
-#ifndef GL_COLOR_ATTACHMENT0
-#define GL_COLOR_ATTACHMENT0 0x8CE0
-#endif
-
-#ifndef GL_FRAMEBUFFER_BINDING
-#define GL_FRAMEBUFFER_BINDING 0x8CA6
-#endif
 
 #define GL_MODELVIEW			0x1700
 #define GL_PROJECTION			0x1701

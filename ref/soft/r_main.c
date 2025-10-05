@@ -12,7 +12,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
-#include "../gl/ref_scale.h"
+
 #include "r_local.h"
 #include "xash3d_mathlib.h"
 #include "library.h"
@@ -24,6 +24,7 @@ int r_cnumsurfs;
 #define IsLiquidContents( cnt ) ( cnt == CONTENTS_WATER || cnt == CONTENTS_SLIME || cnt == CONTENTS_LAVA )
 
 ref_instance_t RI;
+
 
 // quake defines. will be refactored
 
@@ -56,8 +57,8 @@ int   r_screenwidth;
 int r_viewcluster, r_oldviewcluster;
 
 CVAR_DEFINE_AUTO( sw_clearcolor, "48999", 0, "screen clear color" );
-CVAR_DEFINE_AUTO( sw_drawflat, "0", FCVAR_ARCHIVE, "" );
-CVAR_DEFINE_AUTO( sw_draworder, "0", FCVAR_ARCHIVE, "" );
+CVAR_DEFINE_AUTO( sw_drawflat, "0", FCVAR_CHEAT, "" );
+CVAR_DEFINE_AUTO( sw_draworder, "0", FCVAR_CHEAT, "" );
 CVAR_DEFINE_AUTO( sw_maxedges, "32", 0, "" );
 static CVAR_DEFINE_AUTO( sw_maxsurfs, "0", 0, "" );
 CVAR_DEFINE_AUTO( sw_mipscale, "1", FCVAR_GLCONFIG, "nothing" );
@@ -1245,7 +1246,6 @@ R_BeginFrame
 */
 void GAME_EXPORT R_BeginFrame( qboolean clearScene )
 {
-	R_BindRenderTargetForScene();
 	R_Set2DMode( true );
 
 	// draw buffer stuff
@@ -1339,7 +1339,6 @@ R_EndFrame
 */
 void GAME_EXPORT R_EndFrame( void )
 {
-	R_BlitScaleRenderTargetToScreen( vid.width, vid.height );
 	// flush any remaining 2D bits
 	R_Set2DMode( false );
 
