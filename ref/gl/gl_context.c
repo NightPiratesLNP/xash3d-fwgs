@@ -28,6 +28,9 @@ R_CreateScaleRenderTarget
 */
 qboolean R_CreateScaleRenderTarget( int width, int height )
 {
+	qboolean fbo_supported;
+
+	// Clean existing if any
 	if( g_scale_fbo || g_scale_tex )
 	{
 		if( g_scale_fbo )
@@ -73,12 +76,15 @@ qboolean R_CreateScaleRenderTarget( int width, int height )
 	pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
 	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
 
-	qboolean fbo_supported = (g_scale_fbo != 0 && g_scale_tex != 0);
+	// Basit FBO kontrolü - pglCheckFramebufferStatus kullanmadan
+	// Eğer FBO ve texture başarıyla oluşturulduysa başarılı kabul et
+	fbo_supported = (g_scale_fbo != 0 && g_scale_tex != 0); // sadece atama kaldı
 
 	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	if( !fbo_supported )
 	{
+		// cleanup on failure
 		if( g_scale_fbo ) { pglDeleteFramebuffers( 1, &g_scale_fbo ); g_scale_fbo = 0; }
 		if( g_scale_tex ) { pglDeleteTextures( 1, &g_scale_tex ); g_scale_tex = 0; }
 		return false;
