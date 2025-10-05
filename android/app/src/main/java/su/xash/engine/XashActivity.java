@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.content.SharedPreferences;
 import android.provider.Settings.Secure;
 import android.util.Log;
+import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 
@@ -32,12 +33,58 @@ public class XashActivity extends SDLActivity {
 
         mPreferences = getSharedPreferences("app_preferences", MODE_PRIVATE);
 
+        applySDLResolutionHints();
+
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
 
         AndroidBug5497Workaround.assistActivity(this);
+    }
+
+    private void applySDLResolutionHints() {
+        String widthStr = mPreferences.getString("resolution_width", "0");
+        String heightStr = mPreferences.getString("resolution_height", "0");
+        String scaleStr = mPreferences.getString("resolution_scale", "1.0");
+
+        int width = 0;
+        int height = 0;
+        float scale = 1.0f;
+
+        try { 
+            width = Integer.parseInt(widthStr); 
+        } catch (Exception e) { 
+            width = 0; 
+        }
+        
+        try { 
+            height = Integer.parseInt(heightStr); 
+        } catch (Exception e) { 
+            height = 0; 
+        }
+        
+        try { 
+            scale = Float.parseFloat(scaleStr); 
+        } catch (Exception e) { 
+            scale = 1.0f; 
+        }
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        if (width > 0 && height > 0) {
+            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(width));
+            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(height));
+            Log.d(TAG, "Setting SDL resolution hints: " + width + "x" + height);
+        } else if (scale != 1.0f) {
+            int scaledWidth = (int)(metrics.widthPixels / scale);
+            int scaledHeight = (int)(metrics.heightPixels / scale);
+            
+            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_WIDTH", String.valueOf(scaledWidth));
+            SDLActivity.nativeSetenv("SDL_VIDEO_WINDOW_HEIGHT", String.valueOf(scaledHeight));
+            Log.d(TAG, "Setting scaled SDL resolution: " + scaledWidth + "x" + scaledHeight + " (scale: " + scale + ")");
+        }
     }
 
     @Override
@@ -153,7 +200,6 @@ public class XashActivity extends SDLActivity {
         }
     }
 
-    // This is the main launcher argument builder. It reads settings and applies them correctly.
     @Override
     protected String[] getArguments() {
         String gamedir = getIntent().getStringExtra("gamedir");
@@ -183,22 +229,18 @@ public class XashActivity extends SDLActivity {
         String argv = getIntent().getStringExtra("argv");
         if (argv == null) argv = "-console -log";
 
-        // --- Resolution settings ---
         String widthStr = mPreferences.getString("resolution_width", "0");
         String heightStr = mPreferences.getString("resolution_height", "0");
         String scaleStr = mPreferences.getString("resolution_scale", "1.0");
 
-        int width = 0, height = 0;
+        int width = 0;
+        int height = 0;
         float scale = 1.0f;
 
         try { width = Integer.parseInt(widthStr); } catch (Exception e) { width = 0; }
         try { height = Integer.parseInt(heightStr); } catch (Exception e) { height = 0; }
         try { scale = Float.parseFloat(scaleStr); } catch (Exception e) { scale = 1.0f; }
 
-        // Log the values for debugging
-        Log.d(TAG, "Resolution preference: width=" + width + " height=" + height + " scale=" + scale);
-
-        // Apply resolution: width/height takes precedence, otherwise use scale
         if (width > 0 && height > 0) {
             argv += " -width " + width + " -height " + height;
             Log.d(TAG, "Added resolution args: -width " + width + " -height " + height);
@@ -206,26 +248,20 @@ public class XashActivity extends SDLActivity {
             int scaledWidth = (int)(getRealWidth() / scale);
             int scaledHeight = (int)(getRealHeight() / scale);
             argv += " -width " + scaledWidth + " -height " + scaledHeight;
-            Log.d(TAG, "Added scaled resolution args with scale: " + scale +
-                " (" + scaledWidth + "x" + scaledHeight + ")");
-        } else {
-            Log.d(TAG, "No resolution overrides set, using native resolution.");
+            Log.d(TAG, "Added scaled resolution args: " + scaledWidth + "x" + scaledHeight);
         }
 
-        // Add global arguments if any
         String globalArgs = getGlobalArguments();
         if (!globalArgs.isEmpty()) {
             Log.d(TAG, "Global arguments found: " + globalArgs);
             argv = combineArguments(argv, globalArgs);
         }
 
-        // Add game argument if needed
         if (!argv.contains("-game") && !gamedir.equals("valve")) {
             argv += " -game " + gamedir;
             Log.d(TAG, "Added -game parameter to argv: " + argv);
         }
 
-        // Mobile hacks DLL arg for certain mods
         if (argv.indexOf(" -dll ") < 0 && gamelibdir == null) {
             final List<String> mobile_hacks_gamedirs = Arrays.asList(new String[]{
                 "aom", "bdlands", "biglolly", "bshift", "caseclosed",
@@ -240,13 +276,13 @@ public class XashActivity extends SDLActivity {
     }
 
     private int getRealWidth() {
-        android.util.DisplayMetrics realMetrics = new android.util.DisplayMetrics();
+        DisplayMetrics realMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getRealMetrics(realMetrics);
         return realMetrics.widthPixels;
     }
 
     private int getRealHeight() {
-        android.util.DisplayMetrics realMetrics = new android.util.DisplayMetrics();
+        DisplayMetrics realMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getRealMetrics(realMetrics);
         return realMetrics.heightPixels;
     }
