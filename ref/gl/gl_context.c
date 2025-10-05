@@ -266,11 +266,9 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		/*
 		 Compute desired internal RT size.
 		 Use Cvar_VariableInteger("width"/"height") if present; fall back to fixed defaults.
-		 Note: previously code attempted to use gEngfuncs.Cvar_VariableInteger which is incorrect:
-		 Cvar_VariableInteger is a global function, not a member of gEngfuncs/ref_api.
 		*/
-		screen_w = Cvar_VariableInteger( "width" );
-		screen_h = Cvar_VariableInteger( "height" );
+		screen_w = gEngfuncs.Cvar_Get( "width", "640", 0 )->integer;
+		screen_h = gEngfuncs.Cvar_Get( "height", "480", 0 )->integer;
 
 		if( screen_w <= 0 ) screen_w = 640;
 		if( screen_h <= 0 ) screen_h = 480;
@@ -286,7 +284,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		{
 			g_scale_x = scale_x;
 			g_scale_y = scale_y;
-			Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
+			gEngfuncs.Con_Reportf( "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
 		}
 		else
 		{
