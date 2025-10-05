@@ -25,12 +25,8 @@ static float  g_scale_y = 1.0f;
 R_CreateScaleRenderTarget
 ========================
 */
-qboolean R_CreateScaleRenderTarget( int width, int height ) // static kaldırıldı
+qboolean R_CreateScaleRenderTarget( int width, int height )
 {
-	GLenum status;
-	qboolean fbo_supported = true; // değişkeni blok başına taşıdık
-
-	// Clean existing if any
 	if( g_scale_fbo || g_scale_tex )
 	{
 		if( g_scale_fbo )
@@ -76,26 +72,12 @@ qboolean R_CreateScaleRenderTarget( int width, int height ) // static kaldırıl
 	pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
 	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
 
-#ifdef _WIN32
-	fbo_supported = (g_scale_fbo != 0 && g_scale_tex != 0);
-#else
-	// Diğer platformlar için FBO status kontrolü
-	status = GL_FRAMEBUFFER_COMPLETE; // varsayılan olarak başarılı
-	
-	// pglCheckFramebufferStatus fonksiyon pointer'ını kontrol et
-	if( pglCheckFramebufferStatus )
-	{
-		status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
-	}
-	
-	fbo_supported = (status == GL_FRAMEBUFFER_COMPLETE);
-#endif
+	qboolean fbo_supported = (g_scale_fbo != 0 && g_scale_tex != 0);
 
 	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	if( !fbo_supported )
 	{
-		// cleanup on failure
 		if( g_scale_fbo ) { pglDeleteFramebuffers( 1, &g_scale_fbo ); g_scale_fbo = 0; }
 		if( g_scale_tex ) { pglDeleteTextures( 1, &g_scale_tex ); g_scale_tex = 0; }
 		return false;
