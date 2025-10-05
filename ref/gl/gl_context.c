@@ -27,6 +27,13 @@ ref_globals_t *gpGlobals;
 ref_client_t  *gp_cl;
 ref_host_t    *gp_host;
 
+static GLuint g_scale_fbo = 0;
+static GLuint g_scale_tex = 0;
+static int    g_scale_rt_width = 0;
+static int    g_scale_rt_height = 0;
+static float  g_scale_x = 1.0f;
+static float  g_scale_y = 1.0f;
+
 void _Mem_Free( void *data, const char *filename, int fileline )
 {
 	gEngfuncs._Mem_Free( data, filename, fileline );
@@ -51,6 +58,110 @@ static const byte *R_GetTextureOriginalBuffer( unsigned int idx )
 		return NULL;
 
 	return glt->original->buffer;
+}
+
+static qboolean R_CreateScaleRenderTarget( int width, int height )
+{
+	if( g_scale_fbo )
+	{
+		pglDeleteFramebuffers( 1, &g_scale_fbo );
+		g_scale_fbo = 0;
+	}
+	if( g_scale_tex )
+	{
+		pglDeleteTextures( 1, &g_scale_tex );
+		g_scale_tex = 0;
+	}
+
+	if( width <= 0 || height <= 0 )
+		return false;
+
+	pglGenTextures( 1, &g_scale_tex );
+	pglBindTexture( GL_TEXTURE_2D, g_scale_tex );
+	pglTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	pglBindTexture( GL_TEXTURE_2D, 0 );
+
+	pglGenFramebuffers( 1, &g_scale_fbo );
+	pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
+	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
+
+	GLenum status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	
+	if( status != GL_FRAMEBUFFER_COMPLETE )
+	{
+		if( g_scale_fbo ) pglDeleteFramebuffers( 1, &g_scale_fbo );
+		if( g_scale_tex ) pglDeleteTextures( 1, &g_scale_tex );
+		g_scale_fbo = 0;
+		g_scale_tex = 0;
+		return false;
+	}
+
+	g_scale_rt_width = width;
+	g_scale_rt_height = height;
+	return true;
+}
+
+static void R_DestroyScaleRenderTarget( void )
+{
+	if( g_scale_fbo )
+	{
+		pglDeleteFramebuffers( 1, &g_scale_fbo );
+		g_scale_fbo = 0;
+	}
+	if( g_scale_tex )
+	{
+		pglDeleteTextures( 1, &g_scale_tex );
+		g_scale_tex = 0;
+	}
+	g_scale_rt_width = g_scale_rt_height = 0;
+	g_scale_x = g_scale_y = 1.0f;
+}
+
+static void R_BindRenderTargetForScene( void )
+{
+	if( g_scale_fbo )
+		pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
+	else
+		pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
+static void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h )
+{
+	if( !g_scale_fbo || !g_scale_tex )
+		return;
+
+	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	pglDisable( GL_DEPTH_TEST );
+	pglMatrixMode( GL_PROJECTION );
+	pglPushMatrix();
+	pglLoadIdentity();
+	pglOrtho( 0, screen_w, 0, screen_h, -1, 1 );
+
+	pglMatrixMode( GL_MODELVIEW );
+	pglPushMatrix();
+	pglLoadIdentity();
+
+	pglEnable( GL_TEXTURE_2D );
+	pglBindTexture( GL_TEXTURE_2D, g_scale_tex );
+
+	pglBegin( GL_QUADS );
+		pglTexCoord2f( 0, 0 ); pglVertex2f( 0, 0 );
+		pglTexCoord2f( 1, 0 ); pglVertex2f( screen_w, 0 );
+		pglTexCoord2f( 1, 1 ); pglVertex2f( screen_w, screen_h );
+		pglTexCoord2f( 0, 1 ); pglVertex2f( 0, screen_h );
+	pglEnd();
+
+	pglBindTexture( GL_TEXTURE_2D, 0 );
+	pglDisable( GL_TEXTURE_2D );
+
+	pglPopMatrix();
+	pglMatrixMode( GL_PROJECTION );
+	pglPopMatrix();
+	pglMatrixMode( GL_MODELVIEW );
 }
 
 /*
@@ -365,22 +476,51 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
 	qboolean ret = true;
+
 	if( rotate > 0 )
 	{
-		gEngfuncs.Con_Printf("rotation transform not supported\n");
+		gEngfuncs.Con_Printf( "rotation transform not supported\n" );
 		ret = false;
 	}
 
 	if( offset_x || offset_y )
 	{
-		gEngfuncs.Con_Printf("offset transform not supported\n");
+		gEngfuncs.Con_Printf( "offset transform not supported\n" );
 		ret = false;
 	}
 
 	if( scale_x != 1.0f || scale_y != 1.0f )
 	{
-		gEngfuncs.Con_Printf("scale transform not supported\n");
-		ret = false;
+		int screen_w = Cvar_VariableInteger( "width" );
+		int screen_h = Cvar_VariableInteger( "height" );
+
+		if( screen_w <= 0 || screen_h <= 0 )
+		{
+			screen_w = vid.width ? vid.width : 640;
+			screen_h = vid.height ? vid.height : 480;
+		}
+
+		int rt_w = (int)( screen_w * (1.0f / scale_x) );
+		int rt_h = (int)( screen_h * (1.0f / scale_y) );
+
+		if( rt_w < 1 ) rt_w = 1;
+		if( rt_h < 1 ) rt_h = 1;
+
+		if( R_CreateScaleRenderTarget( rt_w, rt_h ) )
+		{
+			g_scale_x = scale_x;
+			g_scale_y = scale_y;
+			Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
+		}
+		else
+		{
+			gEngfuncs.Con_Printf( "scale transform not supported (FBO creation failed)\n" );
+			ret = false;
+		}
+	}
+	else
+	{
+		R_DestroyScaleRenderTarget();
 	}
 
 	return ret;
