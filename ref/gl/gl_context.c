@@ -1,6 +1,7 @@
 #define APIENTRY_LINKAGE
 #include "gl_local.h"
 #include "gl_export.h"
+#include "cvar.h"
 
 #if XASH_GL4ES
 #include "gl4es/include/gl4esinit.h"
@@ -253,11 +254,12 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 
 	if( scale_x != 1.0f || scale_y != 1.0f )
 	{
-		cvar_t *cv_w = Cvar_Get( "width", "640", 0 );
-		cvar_t *cv_h = Cvar_Get( "height", "480", 0 );
 
-		screen_w = (cv_w && cv_w->value > 0.0f) ? (int)cv_w->value : 640;
-		screen_h = (cv_h && cv_h->value > 0.0f) ? (int)cv_h->value : 480;
+		screen_w = Cvar_VariableInteger( "width" );
+		screen_h = Cvar_VariableInteger( "height" );
+
+		if( screen_w <= 0 ) screen_w = 640;
+		if( screen_h <= 0 ) screen_h = 480;
 
 		rt_w = (int)( screen_w * (1.0f / scale_x) );
 		rt_h = (int)( screen_h * (1.0f / scale_y) );
@@ -269,7 +271,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		{
 			g_scale_x = scale_x;
 			g_scale_y = scale_y;
-			gEngfuncs.Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
+			Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
 		}
 		else
 		{
