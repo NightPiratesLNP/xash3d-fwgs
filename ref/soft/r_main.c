@@ -1246,6 +1246,7 @@ R_BeginFrame
 */
 void GAME_EXPORT R_BeginFrame( qboolean clearScene )
 {
+	R_BindRenderTargetForScene();
 	R_Set2DMode( true );
 
 	// draw buffer stuff
@@ -1339,6 +1340,10 @@ R_EndFrame
 */
 void GAME_EXPORT R_EndFrame( void )
 {
+	if( g_scale_fbo )
+	{
+		R_BlitScaleRenderTargetToScreen( vid.width, vid.height );
+	}
 	// flush any remaining 2D bits
 	R_Set2DMode( false );
 
