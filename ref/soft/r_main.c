@@ -12,7 +12,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
-
+#include "../gl/gl_export.h"
 #include "r_local.h"
 #include "xash3d_mathlib.h"
 #include "library.h"
@@ -24,8 +24,6 @@ int r_cnumsurfs;
 #define IsLiquidContents( cnt ) ( cnt == CONTENTS_WATER || cnt == CONTENTS_SLIME || cnt == CONTENTS_LAVA )
 
 ref_instance_t RI;
-extern void R_BindRenderTargetForScene( void );
-extern void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h );
 
 // quake defines. will be refactored
 
