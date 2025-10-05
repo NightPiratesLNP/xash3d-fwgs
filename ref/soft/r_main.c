@@ -24,7 +24,8 @@ int r_cnumsurfs;
 #define IsLiquidContents( cnt ) ( cnt == CONTENTS_WATER || cnt == CONTENTS_SLIME || cnt == CONTENTS_LAVA )
 
 ref_instance_t RI;
-
+extern void R_BindRenderTargetForScene( void );
+extern void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h );
 
 // quake defines. will be refactored
 
@@ -1340,10 +1341,7 @@ R_EndFrame
 */
 void GAME_EXPORT R_EndFrame( void )
 {
-	if( g_scale_fbo )
-	{
-		R_BlitScaleRenderTargetToScreen( vid.width, vid.height );
-	}
+	R_BlitScaleRenderTargetToScreen( vid.width, vid.height );
 	// flush any remaining 2D bits
 	R_Set2DMode( false );
 
