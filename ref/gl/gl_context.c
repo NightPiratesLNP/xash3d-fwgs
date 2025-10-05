@@ -1,18 +1,3 @@
-/*
-vid_sdl.c - SDL vid component
-Copyright (C) 2018 a1batross
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-*/
-
 #define APIENTRY_LINKAGE
 #include "gl_local.h"
 #include "gl_export.h"
@@ -63,6 +48,8 @@ R_CreateScaleRenderTarget
 */
 static qboolean R_CreateScaleRenderTarget( int width, int height )
 {
+	GLenum status;
+
 	// Clean existing if any
 	if( g_scale_fbo || g_scale_tex )
 	{
@@ -110,7 +97,7 @@ static qboolean R_CreateScaleRenderTarget( int width, int height )
 	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
 
 	// check framebuffer status
-	GLenum status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
 	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	if( status != GL_FRAMEBUFFER_COMPLETE )
@@ -174,6 +161,8 @@ R_BlitScaleRenderTargetToScreen
 */
 static void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h )
 {
+	GLboolean blendEnabled, depthTestEnabled;
+
 	if( !g_scale_fbo || !g_scale_tex )
 		return;
 
@@ -181,8 +170,8 @@ static void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h )
 	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	// Simple orthographic full-screen blit - keep state changes minimal and try to restore states that are commonly used.
-	GLboolean blendEnabled = pglIsEnabled( GL_BLEND );
-	GLboolean depthTestEnabled = pglIsEnabled( GL_DEPTH_TEST );
+	blendEnabled = pglIsEnabled( GL_BLEND );
+	depthTestEnabled = pglIsEnabled( GL_DEPTH_TEST );
 
 	pglDisable( GL_DEPTH_TEST );
 	pglDisable( GL_CULL_FACE );
@@ -197,7 +186,7 @@ static void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h )
 	pglPushMatrix();
 	pglLoadIdentity();
 
-	pglActiveTexture( GL_TEXTURE0 );
+	pglActiveTexture( XASH_TEXTURE0 );
 	pglBindTexture( GL_TEXTURE_2D, g_scale_tex );
 
 	// draw a quad that covers the whole screen
@@ -258,6 +247,7 @@ R_SetDisplayTransform
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
 	qboolean ret = true;
+	int screen_w, screen_h, rt_w, rt_h;
 
 	if( rotate > 0 )
 	{
@@ -278,8 +268,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		 Use CVars "width"/"height" if present; fall back to vid.* values if they exist.
 		 Avoid direct dependency on 'vid' symbol to keep this file self-contained.
 		*/
-		int screen_w = Cvar_VariableInteger( "width" );
-		int screen_h = Cvar_VariableInteger( "height" );
+		screen_w = gEngfuncs.Cvar_VariableInteger( "width" );
+		screen_h = gEngfuncs.Cvar_VariableInteger( "height" );
 
 		if( screen_w <= 0 ) 
 		{
@@ -293,8 +283,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 			screen_h = gpGlobals->height ? gpGlobals->height : 480;
 		}
 
-		int rt_w = (int)( screen_w * (1.0f / scale_x) );
-		int rt_h = (int)( screen_h * (1.0f / scale_y) );
+		rt_w = (int)( screen_w * (1.0f / scale_x) );
+		rt_h = (int)( screen_h * (1.0f / scale_y) );
 
 		if( rt_w < 1 ) rt_w = 1;
 		if( rt_h < 1 ) rt_h = 1;
@@ -304,7 +294,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		{
 			g_scale_x = scale_x;
 			g_scale_y = scale_y;
-			Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
+			gEngfuncs.Con_Reportf( "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
 		}
 		else
 		{
