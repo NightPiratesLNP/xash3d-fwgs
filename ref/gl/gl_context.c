@@ -1,6 +1,7 @@
 #define APIENTRY_LINKAGE
 #include "gl_local.h"
 #include "gl_export.h"
+#include "cvar.h"
 
 #if XASH_GL4ES
 #include "gl4es/include/gl4esinit.h"
@@ -10,28 +11,6 @@ ref_api_t      gEngfuncs;
 ref_globals_t *gpGlobals;
 ref_client_t  *gp_cl;
 ref_host_t    *gp_host;
-
-/*
- Some build environments (especially when targeting older GL headers
- or GL ES without extension defines) may not declare framebuffer-related
- enums. Provide safe fallbacks so the file compiles.
- Values taken from OpenGL / GL_ARB_framebuffer_object spec.
-*/
-#ifndef GL_FRAMEBUFFER
-#define GL_FRAMEBUFFER 0x8D40
-#endif
-
-#ifndef GL_COLOR_ATTACHMENT0
-#define GL_COLOR_ATTACHMENT0 0x8CE0
-#endif
-
-#ifndef GL_FRAMEBUFFER_COMPLETE
-#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
-#endif
-
-#ifndef GL_FRAMEBUFFER_BINDING
-#define GL_FRAMEBUFFER_BINDING 0x8CA6
-#endif
 
 /* Global state for optional internal scaling render target (FBO) */
 static GLuint g_scale_fbo = 0;
@@ -46,8 +25,11 @@ static float  g_scale_y = 1.0f;
 R_CreateScaleRenderTarget
 ========================
 */
-static qboolean R_CreateScaleRenderTarget( int width, int height )
+qboolean R_CreateScaleRenderTarget( int width, int height ) // static kaldırıldı
 {
+	GLenum status;
+	qboolean fbo_supported = true; // değişkeni blok başına taşıdık
+
 	// Clean existing if any
 	if( g_scale_fbo || g_scale_tex )
 	{
@@ -94,16 +76,11 @@ static qboolean R_CreateScaleRenderTarget( int width, int height )
 	pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
 	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_scale_tex, 0 );
 
-	// FBO status kontrolü - FBO desteği olup olmadığını kontrol et
-	// Eğer pglCheckFramebufferStatus tanımlı değilse, FBO'nun başarılı olduğunu varsay
-	qboolean fbo_supported = true;
-	
 #ifdef _WIN32
-	// Windows'ta basit bir FBO kontrolü
 	fbo_supported = (g_scale_fbo != 0 && g_scale_tex != 0);
 #else
 	// Diğer platformlar için FBO status kontrolü
-	GLenum status = GL_FRAMEBUFFER_COMPLETE; // varsayılan olarak başarılı
+	status = GL_FRAMEBUFFER_COMPLETE; // varsayılan olarak başarılı
 	
 	// pglCheckFramebufferStatus fonksiyon pointer'ını kontrol et
 	if( pglCheckFramebufferStatus )
@@ -134,7 +111,7 @@ static qboolean R_CreateScaleRenderTarget( int width, int height )
 R_DestroyScaleRenderTarget
 ========================
 */
-static void R_DestroyScaleRenderTarget( void )
+void R_DestroyScaleRenderTarget( void ) // static kaldırıldı
 {
 	if( g_scale_fbo )
 	{
@@ -154,11 +131,8 @@ static void R_DestroyScaleRenderTarget( void )
 ========================
 R_BindRenderTargetForScene
 ========================
- Bind FBO if present before rendering the scene.
- If no internal RT exists, bind default framebuffer (0).
-========================
 */
-static void R_BindRenderTargetForScene( void )
+void R_BindRenderTargetForScene( void ) // static kaldırıldı
 {
 	if( g_scale_fbo )
 		pglBindFramebuffer( GL_FRAMEBUFFER, g_scale_fbo );
@@ -170,12 +144,8 @@ static void R_BindRenderTargetForScene( void )
 ========================
 R_BlitScaleRenderTargetToScreen
 ========================
- Draw full-screen textured quad from internal RT to default framebuffer.
- This is a minimal implementation and relies on fixed-function/compatibility APIs.
- On GL ES2+ or core contexts you should replace with a simple textured quad shader.
-========================
 */
-static void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h )
+void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h ) // static kaldırıldı
 {
 	GLboolean blendEnabled, depthTestEnabled;
 
@@ -260,7 +230,7 @@ R_SetDisplayTransform
  Returns true if the requested transform is accepted (or partially accepted).
 ========================
 */
-static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
+qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y ) // static kaldırıldı
 {
 	qboolean ret = true;
 	int screen_w, screen_h, rt_w, rt_h;
