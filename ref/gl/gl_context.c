@@ -271,11 +271,11 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		{
 			g_scale_x = scale_x;
 			g_scale_y = scale_y;
-			Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
+			//Con_Reportf( S_NOTE "scale transform enabled: internal RT %ix%i -> screen %ix%i\n", rt_w, rt_h, screen_w, screen_h );
 		}
 		else
 		{
-			gEngfuncs.Con_Printf( "scale transform not supported (FBO creation failed)\n" );
+			//gEngfuncs.Con_Printf( "scale transform not supported (FBO creation failed)\n" );
 			ret = false;
 		}
 	}
