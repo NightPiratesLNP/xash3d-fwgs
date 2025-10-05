@@ -1,7 +1,6 @@
 #define APIENTRY_LINKAGE
 #include "gl_local.h"
 #include "gl_export.h"
-#include "cvar.h"
 
 #if XASH_GL4ES
 #include "gl4es/include/gl4esinit.h"
