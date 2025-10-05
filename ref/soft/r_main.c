@@ -12,7 +12,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
-#include "../gl/gl_local.h"
+#include "../gl/ref_scale.h"
 #include "r_local.h"
 #include "xash3d_mathlib.h"
 #include "library.h"
