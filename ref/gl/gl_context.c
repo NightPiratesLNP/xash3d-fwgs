@@ -251,6 +251,16 @@ static const byte *R_GetTextureOriginalBuffer( unsigned int idx )
 	return glt->original->buffer;
 }
 
+/*
+========================
+R_SetDisplayTransform
+========================
+ Provide limited support for scale transforms by creating an internal render target
+ (smaller render resolution) and blitting it to the screen. Rotation/offsets still
+ log "not supported" as before.
+ Returns true if the requested transform is accepted (or partially accepted).
+========================
+*/
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
 	qboolean ret = true;
@@ -270,9 +280,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 
 	if( scale_x != 1.0f || scale_y != 1.0f )
 	{
-
-		screen_w = Cvar_VariableInteger( "width" );
-		screen_h = Cvar_VariableInteger( "height" );
+		screen_w = gpGlobals->width;
+		screen_h = gpGlobals->height;
 
 		if( screen_w <= 0 ) screen_w = 640;
 		if( screen_h <= 0 ) screen_h = 480;
