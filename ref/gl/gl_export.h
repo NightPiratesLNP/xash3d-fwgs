@@ -56,6 +56,10 @@ typedef char GLcharARB;
 typedef uint GLhandleARB;
 typedef float GLmatrix[16];
 
+qboolean R_BindRenderTargetForScene( void );
+void R_BlitScaleRenderTargetToScreen( int screen_w, int screen_h );
+qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y );
+
 #define GL_MODELVIEW			0x1700
 #define GL_PROJECTION			0x1701
 #define GL_TEXTURE				0x1702
