@@ -62,6 +62,22 @@ typedef char GLcharARB;
 typedef uint GLhandleARB;
 typedef float GLmatrix[16];
 
+#ifndef GL_FRAMEBUFFER
+#define GL_FRAMEBUFFER 0x8D40
+#endif
+
+#ifndef GL_FRAMEBUFFER_COMPLETE
+#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
+#endif
+
+#ifndef GL_COLOR_ATTACHMENT0
+#define GL_COLOR_ATTACHMENT0 0x8CE0
+#endif
+
+#ifndef GL_FRAMEBUFFER_BINDING
+#define GL_FRAMEBUFFER_BINDING 0x8CA6
+#endif
+
 #define GL_MODELVIEW			0x1700
 #define GL_PROJECTION			0x1701
 #define GL_TEXTURE				0x1702
