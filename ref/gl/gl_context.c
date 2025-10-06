@@ -381,15 +381,12 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 	{
 		int native_w = gpGlobals->width;
 		int native_h = gpGlobals->height;
+
 		int scaled_w = (int)(native_w / scale_x);
 		int scaled_h = (int)(native_h / scale_y);
-		int vp_x = 0, vp_y = 0;
 
-		if (scale_x > 1.0f || scale_y > 1.0f)
-		{
-			vp_x = (native_w - scaled_w) / 2;
-			vp_y = (native_h - scaled_h) / 2;
-		}
+		int vp_x = (native_w - scaled_w) / 2;
+		int vp_y = (native_h - scaled_h) / 2;
 
 		pglViewport(vp_x, vp_y, scaled_w, scaled_h);
 		pglScissor(vp_x, vp_y, scaled_w, scaled_h);
