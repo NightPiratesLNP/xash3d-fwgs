@@ -19,7 +19,6 @@ GNU General Public License for more details.
 #include "input.h"
 #include "vid_common.h"
 #include "platform/platform.h"
-#include "../../ref/gl/gl_local.h"
 
 static CVAR_DEFINE_AUTO( vid_mode, "0", FCVAR_RENDERINFO, "current video mode index (used only for storage)" );
 static CVAR_DEFINE_AUTO( vid_rotate, "0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "screen rotation (0-3)" );
@@ -145,31 +144,17 @@ void VID_SetDisplayTransform( int *render_w, int *render_h )
 	uint rotate = vid_rotate.value;
 	float scale = vid_scale.value;
 
-	int native_w = *render_w;
-	int native_h = *render_h;
-	int scaled_w, scaled_h;
-	int offset_x, offset_y;
-
 	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, scale, scale ))
 	{
 		if( rotate & 1 )
 		{
-			int swap = native_w;
-			native_w = native_h;
-			native_h = swap;
+			int swap = *render_w;
+			*render_w = *render_h;
+			*render_h = swap;
 		}
 
-		scaled_w = (int)(native_w / scale);
-		scaled_h = (int)(native_h / scale);
-
-		offset_x = (native_w - scaled_w) / 2;
-		offset_y = (native_h - scaled_h) / 2;
-
-		pglViewport(offset_x, offset_y, scaled_w, scaled_h);
-		pglScissor(offset_x, offset_y, scaled_w, scaled_h);
-
-		*render_w = scaled_w;
-		*render_h = scaled_h;
+		*render_w /= scale;
+		*render_h /= scale;
 	}
 }
 
