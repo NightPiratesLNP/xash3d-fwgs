@@ -142,19 +142,30 @@ notify ref dll about screen transformations
 void VID_SetDisplayTransform( int *render_w, int *render_h )
 {
 	uint rotate = vid_rotate.value;
+	float scale = vid_scale.value;
 
-	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, vid_scale.value, vid_scale.value ))
+	int native_w = *render_w;
+	int native_h = *render_h;
+
+	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, scale, scale ))
 	{
 		if( rotate & 1 )
 		{
-			int swap = *render_w;
-
-			*render_w = *render_h;
-			*render_h = swap;
+			int swap = native_w;
+			native_w = native_h;
+			native_h = swap;
 		}
-/*
-		*render_h /= vid_scale.value;
-		*render_w /= vid_scale.value;*/
+
+		int scaled_w = (int)(native_w / scale);
+		int scaled_h = (int)(native_h / scale);
+		int offset_x = (native_w - scaled_w) / 2;
+		int offset_y = (native_h - scaled_h) / 2;
+
+		pglViewport(offset_x, offset_y, scaled_w, scaled_h);
+		pglScissor(offset_x, offset_y, scaled_w, scaled_h);
+
+		*render_w = scaled_w;
+		*render_h = scaled_h;
 	}
 	else
 	{
