@@ -377,23 +377,18 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		ret = false;
 	}
 
-	if( scale_x != 1.0f || scale_y != 1.0f )
-	{
-		int native_w = gpGlobals->width;
-		int native_h = gpGlobals->height;
+	int native_w = gpGlobals->width;
+	int native_h = gpGlobals->height;
 
-		int scaled_w = (int)(native_w / scale_x);
-		int scaled_h = (int)(native_h / scale_y);
+	int render_w = (int)(native_w / scale_x);
+	int render_h = (int)(native_h / scale_y);
 
-		int vp_x = (native_w - scaled_w) / 2;
-		int vp_y = (native_h - scaled_h) / 2;
+	pglViewport(0, 0, native_w, native_h);
+	pglScissor(0, 0, native_w, native_h);
 
-		pglViewport(vp_x, vp_y, scaled_w, scaled_h);
-		pglScissor(vp_x, vp_y, scaled_w, scaled_h);
+	gEngfuncs.Con_Printf("R_SetDisplayTransform: framebuffer %dx%d stretched to %dx%d (scale_x: %.2f)\n",
+		render_w, render_h, native_w, native_h, scale_x);
 
-		gEngfuncs.Con_Printf("R_SetDisplayTransform: scale %.2fx, viewport %dx%d at (%d,%d)\n",
-			scale_x, scaled_w, scaled_h, vp_x, vp_y);
-	}
 	return ret;
 }
 
