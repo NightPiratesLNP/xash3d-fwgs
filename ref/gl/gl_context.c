@@ -378,39 +378,25 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 	}
 
 	if( scale_x != 1.0f || scale_y != 1.0f )
-    {
-        int scaled_w = (int)(gpGlobals->width / scale_x);
-        int scaled_h = (int)(gpGlobals->height / scale_y);
+	{
+		int native_w = gpGlobals->width;
+		int native_h = gpGlobals->height;
+		int scaled_w = (int)(native_w / scale_x);
+		int scaled_h = (int)(native_h / scale_y);
+		int vp_x = 0, vp_y = 0;
 
-        float native_ar = (float)gpGlobals->width / gpGlobals->height;
-        float scaled_ar = (float)scaled_w / scaled_h;
+		if (scale_x > 1.0f || scale_y > 1.0f)
+		{
+			vp_x = (native_w - scaled_w) / 2;
+			vp_y = (native_h - scaled_h) / 2;
+		}
 
-        if( scaled_ar > native_ar )
-        {
-            int new_w = (int)(scaled_h * native_ar);
-            int offset_x = (scaled_w - new_w) / 2;
-            scaled_w = new_w;
-            offset_x = offset_x;
-            pglViewport(offset_x, 0, scaled_w, scaled_h);
-            pglScissor(offset_x, 0, scaled_w, scaled_h);
-        }
-        else if( scaled_ar < native_ar )
-        {
-            int new_h = (int)(scaled_w / native_ar);
-            int offset_y = (scaled_h - new_h) / 2;
-            scaled_h = new_h;
-            pglViewport(0, offset_y, scaled_w, scaled_h);
-            pglScissor(0, offset_y, scaled_w, scaled_h);
-        }
-        else
-        {
-            pglViewport(0, 0, scaled_w, scaled_h);
-            pglScissor(0, 0, scaled_w, scaled_h);
-        }
+		pglViewport(vp_x, vp_y, scaled_w, scaled_h);
+		pglScissor(vp_x, vp_y, scaled_w, scaled_h);
 
-        gEngfuncs.Con_Printf("R_SetDisplayTransform: scale %.2fx, viewport %dx%d\n",
-            scale_x, scaled_w, scaled_h);
-    }
+		gEngfuncs.Con_Printf("R_SetDisplayTransform: scale %.2fx, viewport %dx%d at (%d,%d)\n",
+			scale_x, scaled_w, scaled_h, vp_x, vp_y);
+	}
 	return ret;
 }
 
