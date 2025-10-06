@@ -382,11 +382,14 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		int scaled_w = (int)(gpGlobals->width / scale_x);
 		int scaled_h = (int)(gpGlobals->height / scale_y);
 
-		pglViewport(0, 0, scaled_w, scaled_h);
-		pglScissor(0, 0, scaled_w, scaled_h);
+		int off_x = (gpGlobals->width - scaled_w) / 2;
+		int off_y = (gpGlobals->height - scaled_h) / 2;
 
-		gEngfuncs.Con_Printf("R_SetDisplayTransform: applied scale %.2fx, viewport %dx%d\n",
-			scale_x, scaled_w, scaled_h);
+		pglViewport(off_x, off_y, scaled_w, scaled_h);
+		pglScissor(off_x, off_y, scaled_w, scaled_h);
+
+		gEngfuncs.Con_Printf("R_SetDisplayTransform: scale %.2fx, viewport %dx%d, offset %d,%d\n",
+			scale_x, scaled_w, scaled_h, off_x, off_y);
 	}
 
 	return ret;
