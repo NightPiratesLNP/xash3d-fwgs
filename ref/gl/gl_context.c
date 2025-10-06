@@ -379,8 +379,14 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 
 	if( scale_x != 1.0f || scale_y != 1.0f )
 	{
-		gEngfuncs.Con_Printf("scale transform not supported\n");
-		ret = false;
+		int scaled_w = (int)(gpGlobals->width / scale_x);
+		int scaled_h = (int)(gpGlobals->height / scale_y);
+
+		pglViewport(0, 0, scaled_w, scaled_h);
+		pglScissor(0, 0, scaled_w, scaled_h);
+
+		gEngfuncs.Con_Printf("R_SetDisplayTransform: applied scale %.2fx, viewport %dx%d\n",
+			scale_x, scaled_w, scaled_h);
 	}
 
 	return ret;
