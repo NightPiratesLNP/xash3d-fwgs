@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #include "input.h"
 #include "vid_common.h"
 #include "platform/platform.h"
+#include "../../ref/gl/gl_local.h"
 
 static CVAR_DEFINE_AUTO( vid_mode, "0", FCVAR_RENDERINFO, "current video mode index (used only for storage)" );
 static CVAR_DEFINE_AUTO( vid_rotate, "0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "screen rotation (0-3)" );
@@ -146,6 +147,8 @@ void VID_SetDisplayTransform( int *render_w, int *render_h )
 
 	int native_w = *render_w;
 	int native_h = *render_h;
+	int scaled_w, scaled_h;
+	int offset_x, offset_y;
 
 	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, scale, scale ))
 	{
@@ -156,20 +159,17 @@ void VID_SetDisplayTransform( int *render_w, int *render_h )
 			native_h = swap;
 		}
 
-		int scaled_w = (int)(native_w / scale);
-		int scaled_h = (int)(native_h / scale);
-		int offset_x = (native_w - scaled_w) / 2;
-		int offset_y = (native_h - scaled_h) / 2;
+		scaled_w = (int)(native_w / scale);
+		scaled_h = (int)(native_h / scale);
+
+		offset_x = (native_w - scaled_w) / 2;
+		offset_y = (native_h - scaled_h) / 2;
 
 		pglViewport(offset_x, offset_y, scaled_w, scaled_h);
 		pglScissor(offset_x, offset_y, scaled_w, scaled_h);
 
 		*render_w = scaled_w;
 		*render_h = scaled_h;
-	}
-	else
-	{
-		Con_Printf( S_WARN "failed to setup screen transform\n" );
 	}
 }
 
