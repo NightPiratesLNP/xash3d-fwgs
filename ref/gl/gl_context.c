@@ -365,6 +365,12 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
 	qboolean ret = true;
+	int native_w = gpGlobals->width;
+	int native_h = gpGlobals->height;
+
+	int render_w = (int)(native_w / scale_x);
+	int render_h = (int)(native_h / scale_y);
+
 	if( rotate > 0 )
 	{
 		gEngfuncs.Con_Printf("rotation transform not supported\n");
@@ -376,12 +382,6 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 		gEngfuncs.Con_Printf("offset transform not supported\n");
 		ret = false;
 	}
-
-	int native_w = gpGlobals->width;
-	int native_h = gpGlobals->height;
-
-	int render_w = (int)(native_w / scale_x);
-	int render_h = (int)(native_h / scale_y);
 
 	pglViewport(0, 0, native_w, native_h);
 	pglScissor(0, 0, native_w, native_h);
