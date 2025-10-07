@@ -370,34 +370,19 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     int scaled_w = (int)(native_w / scale_x);
     int scaled_h = (int)(native_h / scale_y);
 
-    float native_ar = (float)native_w / native_h;
-    float scaled_ar = (float)scaled_w / scaled_h;
+    int vp_x = 0;
+    int vp_y = 0;
 
-    int vp_x = 0, vp_y = 0;
-
-    if( scaled_ar > native_ar )
-    {
-        scaled_w = (int)(scaled_h * native_ar);
-        vp_x = (native_w - scaled_w) / 2;
-    }
-    else if( scaled_ar < native_ar )
-    {
-        scaled_h = (int)(scaled_w / native_ar);
-        vp_y = (native_h - scaled_h) / 2;
-    }
-
-    pglViewport(vp_x, vp_y, scaled_w, scaled_h);
-    pglScissor(vp_x, vp_y, scaled_w, scaled_h);
+    pglViewport(vp_x, vp_y, native_w, native_h);
+    pglScissor(vp_x, vp_y, native_w, native_h);
 
     pglMatrixMode(GL_PROJECTION);
     pglLoadIdentity();
-    pglOrtho(0, scaled_w, 0, scaled_h, -1, 1);
+    pglOrtho(0, native_w, 0, native_h, -1, 1);
     pglMatrixMode(GL_MODELVIEW);
     pglLoadIdentity();
 
-    gEngfuncs.Con_Printf("R_SetDisplayTransform: scale %.2f, viewport %dx%d offset %d,%d\n",
-        scale_x, scaled_w, scaled_h, vp_x, vp_y);
-
+    gEngfuncs.Con_Printf("R_SetDisplayTransform: fullscreen stretch %dx%d\n", native_w, native_h);
     return true;
 }
 
