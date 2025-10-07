@@ -364,35 +364,21 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
-	qboolean ret = true;
-	if( rotate > 0 )
-	{
-		gEngfuncs.Con_Printf("rotation transform not supported\n");
-		ret = false;
-	}
+    static ref_screen_rotation_t current_rotate = REF_ROTATE_NONE;
+    static float current_scale_x = 1.0f;
+    static float current_scale_y = 1.0f;
 
-	if( offset_x || offset_y )
-	{
-		gEngfuncs.Con_Printf("offset transform not supported\n");
-		ret = false;
-	}
+    if( rotate != current_rotate || scale_x != current_scale_x || scale_y != current_scale_y )
+    {
+        current_rotate = rotate;
+        current_scale_x = scale_x;
+        current_scale_y = scale_y;
 
-	if( scale_x != 1.0f || scale_y != 1.0f )
-	{
-		int scaled_w = (int)(gpGlobals->width / scale_x);
-		int scaled_h = (int)(gpGlobals->height / scale_y);
+        Con_Reportf( "R_SetDisplayTransform: rotation=%d, scale_x=%.2f, scale_y=%.2f\n",
+                     rotate, scale_x, scale_y );
+    }
 
-		int off_x = (gpGlobals->width - scaled_w) / 2;
-		int off_y = (gpGlobals->height - scaled_h) / 2;
-
-		pglViewport(off_x, off_y, scaled_w, scaled_h);
-		pglScissor(off_x, off_y, scaled_w, scaled_h);
-
-		gEngfuncs.Con_Printf("R_SetDisplayTransform: scale %.2fx, viewport %dx%d, offset %d,%d\n",
-			scale_x, scaled_w, scaled_h, off_x, off_y);
-	}
-
-	return ret;
+    return true;
 }
 
 static void GAME_EXPORT VGUI_UploadTextureBlock( int drawX, int drawY, const byte *rgba, int blockWidth, int blockHeight )
