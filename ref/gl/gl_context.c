@@ -364,19 +364,21 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
-    static ref_screen_rotation_t current_rotate = REF_ROTATE_NONE;
-    static float current_scale_x = 1.0f;
-    static float current_scale_y = 1.0f;
+    int native_w = gpGlobals->width;
+    int native_h = gpGlobals->height;
 
-    if( rotate != current_rotate || scale_x != current_scale_x || scale_y != current_scale_y )
-    {
-        current_rotate = rotate;
-        current_scale_x = scale_x;
-        current_scale_y = scale_y;
+    float scale = scale_x > 0 ? scale_x : 1.0f; // genelde scale_x == scale_y == vid_scale.value
+    int scaled_w = (int)(native_w / scale);
+    int scaled_h = (int)(native_h / scale);
 
-        Con_Reportf( "R_SetDisplayTransform: rotation=%d, scale_x=%.2f, scale_y=%.2f\n",
-                     rotate, scale_x, scale_y );
-    }
+    int vp_x = (native_w - scaled_w) / 2;
+    int vp_y = (native_h - scaled_h) / 2;
+
+    pglViewport(vp_x, vp_y, scaled_w, scaled_h);
+    pglScissor(vp_x, vp_y, scaled_w, scaled_h);
+
+    Con_Reportf("R_SetDisplayTransform: scale=%.2f, viewport=%dx%d (offset %d,%d)\n",
+                scale, scaled_w, scaled_h, vp_x, vp_y);
 
     return true;
 }
