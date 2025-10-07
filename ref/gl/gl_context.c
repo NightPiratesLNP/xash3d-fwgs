@@ -364,14 +364,26 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
+    gEngfuncs.Con_Printf("R_SetDisplayTransform: called\n");
+
     int native_w = gpGlobals->width;
     int native_h = gpGlobals->height;
 
-    int scaled_w = (int)(native_w / scale_x);
-    int scaled_h = (int)(native_h / scale_y);
+    gEngfuncs.Con_Printf("  native_w=%d native_h=%d\n", native_w, native_h);
 
-    int vp_x = 0;
-    int vp_y = 0;
+    if( native_w <= 0 || native_h <= 0 )
+    {
+        gEngfuncs.Con_Printf("  invalid dimensions, aborting!\n");
+        return false;
+    }
+
+    if( !pglViewport || !pglScissor || !pglMatrixMode || !pglLoadIdentity || !pglOrtho )
+    {
+        gEngfuncs.Con_Printf("  GL functions not ready!\n");
+        return false;
+    }
+
+    int vp_x = 0, vp_y = 0;
 
     pglViewport(vp_x, vp_y, native_w, native_h);
     pglScissor(vp_x, vp_y, native_w, native_h);
@@ -382,7 +394,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     pglMatrixMode(GL_MODELVIEW);
     pglLoadIdentity();
 
-    gEngfuncs.Con_Printf("R_SetDisplayTransform: fullscreen stretch %dx%d\n", native_w, native_h);
+    gEngfuncs.Con_Printf("R_SetDisplayTransform: success\n");
     return true;
 }
 
