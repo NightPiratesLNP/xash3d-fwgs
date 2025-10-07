@@ -142,22 +142,19 @@ notify ref dll about screen transformations
 void VID_SetDisplayTransform( int *render_w, int *render_h )
 {
 	uint rotate = vid_rotate.value;
-	float scale = vid_scale.value;
 
-	int native_w = *render_w;
-	int native_h = *render_h;
-
-	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, scale, scale ))
+	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, vid_scale.value, vid_scale.value ))
 	{
 		if( rotate & 1 )
 		{
-			int swap = native_w;
-			native_w = native_h;
-			native_h = swap;
+			int swap = *render_w;
+
+			*render_w = *render_h;
+			*render_h = swap;
 		}
 
-		*render_w = (int)(native_w / scale);
-		*render_h = (int)(native_h / scale);
+		*render_h /= vid_scale.value;
+		*render_w /= vid_scale.value;
 	}
 	else
 	{
