@@ -377,8 +377,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     pglViewport(vp_x, vp_y, scaled_w, scaled_h);
     pglScissor(vp_x, vp_y, scaled_w, scaled_h);
 
-    Con_Reportf("R_SetDisplayTransform: scale=%.2f, viewport=%dx%d (offset %d,%d)\n",
-                scale, scaled_w, scaled_h, vp_x, vp_y);
+    /*Con_Reportf("R_SetDisplayTransform: scale=%.2f, viewport=%dx%d (offset %d,%d)\n",
+                scale, scaled_w, scaled_h, vp_x, vp_y);*/
 
     return true;
 }
