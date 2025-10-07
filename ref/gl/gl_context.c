@@ -364,36 +364,35 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
-    gEngfuncs.Con_Printf("R_SetDisplayTransform: called\n");
-	gEngfuncs.Con_Printf("  native_w=%d native_h=%d\n", native_w, native_h);
+	qboolean ret = true;
+	if( rotate > 0 )
+	{
+		gEngfuncs.Con_Printf("rotation transform not supported\n");
+		ret = false;
+	}
 
-    int native_w = gpGlobals->width;
-    int native_h = gpGlobals->height;
-	int vp_x = 0, vp_y = 0;
+	if( offset_x || offset_y )
+	{
+		gEngfuncs.Con_Printf("offset transform not supported\n");
+		ret = false;
+	}
 
-    if( native_w <= 0 || native_h <= 0 )
-    {
-        gEngfuncs.Con_Printf("  invalid dimensions, aborting!\n");
-        return false;
-    }
+	if( scale_x != 1.0f || scale_y != 1.0f )
+	{
+		int scaled_w = (int)(gpGlobals->width / scale_x);
+		int scaled_h = (int)(gpGlobals->height / scale_y);
 
-    if( !pglViewport || !pglScissor || !pglMatrixMode || !pglLoadIdentity || !pglOrtho )
-    {
-        gEngfuncs.Con_Printf("  GL functions not ready!\n");
-        return false;
-    }
+		int off_x = (gpGlobals->width - scaled_w) / 2;
+		int off_y = (gpGlobals->height - scaled_h) / 2;
 
-    pglViewport(vp_x, vp_y, native_w, native_h);
-    pglScissor(vp_x, vp_y, native_w, native_h);
+		pglViewport(off_x, off_y, scaled_w, scaled_h);
+		pglScissor(off_x, off_y, scaled_w, scaled_h);
 
-    pglMatrixMode(GL_PROJECTION);
-    pglLoadIdentity();
-    pglOrtho(0, native_w, 0, native_h, -1, 1);
-    pglMatrixMode(GL_MODELVIEW);
-    pglLoadIdentity();
+		gEngfuncs.Con_Printf("R_SetDisplayTransform: scale %.2fx, viewport %dx%d, offset %d,%d\n",
+			scale_x, scaled_w, scaled_h, off_x, off_y);
+	}
 
-    gEngfuncs.Con_Printf("R_SetDisplayTransform: success\n");
-    return true;
+	return ret;
 }
 
 static void GAME_EXPORT VGUI_UploadTextureBlock( int drawX, int drawY, const byte *rgba, int blockWidth, int blockHeight )
