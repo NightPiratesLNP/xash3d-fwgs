@@ -212,23 +212,30 @@ void R_Set2DMode( qboolean enable )
 		if( glState.in2DMode )
 			return;
 
-		// set 2D virtual screen size
-		pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
-		pglMatrixMode( GL_PROJECTION );
+		float scale = vid_scale.value;
+		if( scale <= 0.0f ) scale = 1.0f;
+
+		int scaled_w = gpGlobals->width / scale;
+		int scaled_h = gpGlobals->height / scale;
+
+		int off_x = (gpGlobals->width - scaled_w) / 2;
+		int off_y = (gpGlobals->height - scaled_h) / 2;
+
+		pglViewport(off_x, off_y, scaled_w, scaled_h);
+		pglMatrixMode(GL_PROJECTION);
 		pglLoadIdentity();
-		pglOrtho( 0, gpGlobals->width, gpGlobals->height, 0, -99999, 99999 );
-		pglMatrixMode( GL_MODELVIEW );
+		pglOrtho(0, scaled_w, scaled_h, 0, -99999, 99999);
+		pglMatrixMode(GL_MODELVIEW);
 		pglLoadIdentity();
 
-		GL_Cull( GL_NONE );
-
-		pglDepthMask( GL_FALSE );
-		pglDisable( GL_DEPTH_TEST );
-		pglEnable( GL_ALPHA_TEST );
-		pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+		GL_Cull(GL_NONE);
+		pglDepthMask(GL_FALSE);
+		pglDisable(GL_DEPTH_TEST);
+		pglEnable(GL_ALPHA_TEST);
+		pglColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 		if( glConfig.max_multisamples > 1 && gl_msaa.value )
-			pglDisable( GL_MULTISAMPLE_ARB );
+			pglDisable(GL_MULTISAMPLE_ARB);
 
 		glState.in2DMode = true;
 		RI.currententity = NULL;
@@ -236,23 +243,24 @@ void R_Set2DMode( qboolean enable )
 	}
 	else
 	{
-		pglDepthMask( GL_TRUE );
-		pglEnable( GL_DEPTH_TEST );
+		pglDepthMask(GL_TRUE);
+		pglEnable(GL_DEPTH_TEST);
 		glState.in2DMode = false;
 
-		pglMatrixMode( GL_PROJECTION );
-		GL_LoadMatrix( RI.projectionMatrix );
+		pglMatrixMode(GL_PROJECTION);
+		GL_LoadMatrix(RI.projectionMatrix);
 
-		pglMatrixMode( GL_MODELVIEW );
-		GL_LoadMatrix( RI.worldviewMatrix );
+		pglMatrixMode(GL_MODELVIEW);
+		GL_LoadMatrix(RI.worldviewMatrix);
 
 		if( glConfig.max_multisamples > 1 )
 		{
 			if( gl_msaa.value )
-				pglEnable( GL_MULTISAMPLE_ARB );
-			else pglDisable( GL_MULTISAMPLE_ARB );
+				pglEnable(GL_MULTISAMPLE_ARB);
+			else
+				pglDisable(GL_MULTISAMPLE_ARB);
 		}
 
-		GL_Cull( GL_FRONT );
+		GL_Cull(GL_FRONT);
 	}
 }
