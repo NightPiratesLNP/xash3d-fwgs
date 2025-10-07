@@ -365,11 +365,11 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
     gEngfuncs.Con_Printf("R_SetDisplayTransform: called\n");
+	gEngfuncs.Con_Printf("  native_w=%d native_h=%d\n", native_w, native_h);
 
     int native_w = gpGlobals->width;
     int native_h = gpGlobals->height;
-
-    gEngfuncs.Con_Printf("  native_w=%d native_h=%d\n", native_w, native_h);
+	int vp_x = 0, vp_y = 0;
 
     if( native_w <= 0 || native_h <= 0 )
     {
@@ -382,8 +382,6 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
         gEngfuncs.Con_Printf("  GL functions not ready!\n");
         return false;
     }
-
-    int vp_x = 0, vp_y = 0;
 
     pglViewport(vp_x, vp_y, native_w, native_h);
     pglScissor(vp_x, vp_y, native_w, native_h);
