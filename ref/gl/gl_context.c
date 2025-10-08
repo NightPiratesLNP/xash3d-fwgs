@@ -364,33 +364,37 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
-	qboolean ret = true;
+    if( !gpGlobals || gpGlobals->width <= 0 || gpGlobals->height <= 0 )
+        return false;
 
-	if( rotate > 0 )
-	{
-		gEngfuncs.Con_Printf("rotation transform not supported\n");
-		ret = false;
-	}
+    if( rotate != 0 )
+    {
+        gEngfuncs.Con_Printf("R_SetDisplayTransform: rotation not supported\n");
+        rotate = 0;
+    }
 
-	if( offset_x || offset_y )
-	{
-		gEngfuncs.Con_Printf("offset transform not supported\n");
-		ret = false;
-	}
+    const cvar_t *vid_scale = gEngfuncs.Cvar_FindVar("vid_scale");
+    float scale = (vid_scale) ? bound(1.0f, vid_scale->value, 10.0f) : 1.0f;
 
-	if( scale_x != 1.0f || scale_y != 1.0f )
-	{
-		int scaled_w = (int)(gpGlobals->width / scale_x);
-		int scaled_h = (int)(gpGlobals->height / scale_y);
+    int native_w = gpGlobals->width;
+    int native_h = gpGlobals->height;
 
-		pglViewport(0, 0, scaled_w, scaled_h);
-		pglScissor(0, 0, scaled_w, scaled_h);
+    int scaled_w = (int)(native_w / scale);
+    int scaled_h = (int)(native_h / scale);
 
-		gEngfuncs.Con_Printf("R_SetDisplayTransform: applied scale %.2fx, viewport %dx%d\n",
-			scale_x, scaled_w, scaled_h);
-	}
+    int offset_center_x = (native_w - scaled_w) / 2;
+    int offset_center_y = (native_h - scaled_h) / 2;
 
-	return ret;
+    if( pglViewport && pglScissor )
+    {
+        pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
+        pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
+    }
+
+    gEngfuncs.Con_Printf("R_SetDisplayTransform: vid_scale=%.2f, viewport=%dx%d at (%d,%d)\n",
+        scale, scaled_w, scaled_h, offset_center_x, offset_center_y);
+
+    return true;
 }
 
 static void GAME_EXPORT VGUI_UploadTextureBlock( int drawX, int drawY, const byte *rgba, int blockWidth, int blockHeight )
