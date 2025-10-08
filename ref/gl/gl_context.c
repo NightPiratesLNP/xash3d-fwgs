@@ -364,20 +364,25 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
+    float scale;
+    int native_w, native_h;
+    int scaled_w, scaled_h;
+    int offset_center_x, offset_center_y;
+
     if( !gpGlobals || gpGlobals->width <= 0 || gpGlobals->height <= 0 )
         return false;
 
-    float scale = (float)Cvar_VariableValue("vid_scale");
+    scale = (float)RI.GetCvarFloat( "vid_scale" );
     if( scale < 1.0f ) scale = 1.0f;
 
-    int native_w = gpGlobals->width;
-    int native_h = gpGlobals->height;
+    native_w = gpGlobals->width;
+    native_h = gpGlobals->height;
 
-    int scaled_w = (int)(native_w / scale);
-    int scaled_h = (int)(native_h / scale);
+    scaled_w = (int)(native_w / scale);
+    scaled_h = (int)(native_h / scale);
 
-    int offset_center_x = (native_w - scaled_w) / 2;
-    int offset_center_y = (native_h - scaled_h) / 2;
+    offset_center_x = (native_w - scaled_w) / 2;
+    offset_center_y = (native_h - scaled_h) / 2;
 
     pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
     pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
