@@ -759,7 +759,20 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	if( !VID_CreateWindowWithSafeGL( wndname, xpos, ypos, width, height, wndFlags ))
 		return false;
 
-	// update window size if it was maximized, just in case
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2");
+   	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+	SDL_SetHint(SDL_HINT_RENDER_LOGICAL_SIZE_MODE, "stretch");
+    SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
+
+ 	int native_w, native_h;
+	SDL_GetDisplayBounds(0, NULL);
+	SDL_GetWindowSize(host.hWnd, &native_w, &native_h);
+
+    if( sw.renderer )
+    {
+         SDL_RenderSetLogicalSize(sw.renderer, native_w, native_h);
+    }
+
 	if( FBitSet( SDL_GetWindowFlags( host.hWnd ), SDL_WINDOW_MAXIMIZED|SDL_WINDOW_FULLSCREEN_DESKTOP ) != 0 )
 		SDL_GetWindowSize( host.hWnd, &width, &height );
 
