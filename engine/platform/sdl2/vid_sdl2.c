@@ -687,6 +687,7 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	Uint32 wndFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_FOCUS;
 	int xpos, ypos;
 	int num_displays = SDL_GetNumVideoDisplays();
+	int native_w, native_h;
 	SDL_Rect rect = { window_xpos.value, window_ypos.value, width, height };
 
 	Q_strncpy( wndname, GI->title, sizeof( wndname ));
@@ -763,8 +764,6 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
    	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 	SDL_SetHint(SDL_HINT_RENDER_LOGICAL_SIZE_MODE, "stretch");
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
-
- 	int native_w, native_h;
 	SDL_GetDisplayBounds(0, NULL);
 	SDL_GetWindowSize(host.hWnd, &native_w, &native_h);
 
