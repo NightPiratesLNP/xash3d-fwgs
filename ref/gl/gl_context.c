@@ -364,32 +364,13 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
-    float scale;
-    int native_w, native_h;
-    int scaled_w, scaled_h;
-    int offset_center_x, offset_center_y;
-
-    if( !gpGlobals || gpGlobals->width <= 0 || gpGlobals->height <= 0 )
+    if( rotate > 0 || offset_x || offset_y )
         return false;
 
-    scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+    float scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
     if( scale < 1.0f ) scale = 1.0f;
 
-    native_w = gpGlobals->width;
-    native_h = gpGlobals->height;
-
-    scaled_w = (int)(native_w / scale);
-    scaled_h = (int)(native_h / scale);
-
-    offset_center_x = (native_w - scaled_w) / 2;
-    offset_center_y = (native_h - scaled_h) / 2;
-
-    if( pglViewport && pglScissor )
-    {
-        pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
-        pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
-    }
-
+    gEngfuncs.Con_Printf( "R_SetDisplayTransform: scale=%.2f\n", scale );
     return true;
 }
 
