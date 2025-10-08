@@ -214,7 +214,7 @@ void R_Set2DMode( qboolean enable )
         int scaled_w, scaled_h;
         int offset_center_x, offset_center_y;
 
-        scale = (float)RI.GetCvarFloat( "vid_scale" );
+        scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
         if( scale < 1.0f ) scale = 1.0f;
 
         native_w = gpGlobals->width;
