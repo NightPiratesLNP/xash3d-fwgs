@@ -231,7 +231,7 @@ void R_Set2DMode( qboolean enable )
 
         pglMatrixMode(GL_PROJECTION);
         pglLoadIdentity();
-        pglOrtho(0, scaled_w, scaled_h, 0, -99999, 99999);
+        pglOrtho(0, gpGlobals->width / scale, gpGlobals->height / scale, 0, -99999, 99999);
         pglMatrixMode(GL_MODELVIEW);
         pglLoadIdentity();
 
