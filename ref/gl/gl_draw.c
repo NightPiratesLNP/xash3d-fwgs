@@ -207,52 +207,41 @@ R_Set2DMode
 */
 void R_Set2DMode( qboolean enable )
 {
-	if( enable )
-	{
-		if( glState.in2DMode )
-			return;
+    if( enable )
+    {
+        float scale = (float)Cvar_VariableValue("vid_scale");
+        if( scale < 1.0f ) scale = 1.0f;
 
-		// set 2D virtual screen size
-		pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
-		pglMatrixMode( GL_PROJECTION );
-		pglLoadIdentity();
-		pglOrtho( 0, gpGlobals->width, gpGlobals->height, 0, -99999, 99999 );
-		pglMatrixMode( GL_MODELVIEW );
-		pglLoadIdentity();
+        int native_w = gpGlobals->width;
+        int native_h = gpGlobals->height;
 
-		GL_Cull( GL_NONE );
+        int scaled_w = (int)(native_w / scale);
+        int scaled_h = (int)(native_h / scale);
 
-		pglDepthMask( GL_FALSE );
-		pglDisable( GL_DEPTH_TEST );
-		pglEnable( GL_ALPHA_TEST );
-		pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+        int offset_center_x = (native_w - scaled_w) / 2;
+        int offset_center_y = (native_h - scaled_h) / 2;
 
-		if( glConfig.max_multisamples > 1 && gl_msaa.value )
-			pglDisable( GL_MULTISAMPLE_ARB );
+        pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
+        pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
 
-		glState.in2DMode = true;
-		RI.currententity = NULL;
-		RI.currentmodel = NULL;
-	}
-	else
-	{
-		pglDepthMask( GL_TRUE );
-		pglEnable( GL_DEPTH_TEST );
-		glState.in2DMode = false;
+        pglMatrixMode(GL_PROJECTION);
+        pglLoadIdentity();
+        pglOrtho(0, scaled_w, scaled_h, 0, -99999, 99999);
+        pglMatrixMode(GL_MODELVIEW);
+        pglLoadIdentity();
 
-		pglMatrixMode( GL_PROJECTION );
-		GL_LoadMatrix( RI.projectionMatrix );
+        pglDisable(GL_DEPTH_TEST);
+        pglDisable(GL_CULL_FACE);
+    }
+    else
+    {
+        pglMatrixMode(GL_PROJECTION);
+        pglLoadIdentity();
+        pglOrtho(0, gpGlobals->width, gpGlobals->height, 0, -99999, 99999);
+        pglMatrixMode(GL_MODELVIEW);
+        pglLoadIdentity();
 
-		pglMatrixMode( GL_MODELVIEW );
-		GL_LoadMatrix( RI.worldviewMatrix );
-
-		if( glConfig.max_multisamples > 1 )
-		{
-			if( gl_msaa.value )
-				pglEnable( GL_MULTISAMPLE_ARB );
-			else pglDisable( GL_MULTISAMPLE_ARB );
-		}
-
-		GL_Cull( GL_FRONT );
-	}
+        pglViewport(0, 0, gpGlobals->width, gpGlobals->height);
+        pglScissor(0, 0, gpGlobals->width, gpGlobals->height);
+    }
 }
