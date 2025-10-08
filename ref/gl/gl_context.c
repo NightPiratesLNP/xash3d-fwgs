@@ -367,14 +367,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     if( !gpGlobals || gpGlobals->width <= 0 || gpGlobals->height <= 0 )
         return false;
 
-    if( rotate != 0 )
-    {
-        gEngfuncs.Con_Printf("R_SetDisplayTransform: rotation not supported\n");
-        rotate = 0;
-    }
-
-    const cvar_t *vid_scale = gEngfuncs.Cvar_FindVar("vid_scale");
-    float scale = (vid_scale) ? bound(1.0f, vid_scale->value, 10.0f) : 1.0f;
+    float scale = (float)Cvar_VariableValue("vid_scale");
+    if( scale < 1.0f ) scale = 1.0f;
 
     int native_w = gpGlobals->width;
     int native_h = gpGlobals->height;
@@ -385,14 +379,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     int offset_center_x = (native_w - scaled_w) / 2;
     int offset_center_y = (native_h - scaled_h) / 2;
 
-    if( pglViewport && pglScissor )
-    {
-        pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
-        pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
-    }
-
-    gEngfuncs.Con_Printf("R_SetDisplayTransform: vid_scale=%.2f, viewport=%dx%d at (%d,%d)\n",
-        scale, scaled_w, scaled_h, offset_center_x, offset_center_y);
+    pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
+    pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
 
     return true;
 }
