@@ -207,46 +207,61 @@ R_Set2DMode
 */
 void R_Set2DMode( qboolean enable )
 {
+    float scale;
+    int vp_w, vp_h;
+
     if( enable )
     {
-        float scale;
-        int native_w, native_h;
-        int scaled_w, scaled_h;
-        int offset_center_x, offset_center_y;
+        if( glState.in2DMode )
+            return;
 
         scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
-        if( scale < 1.0f ) scale = 1.0f;
+        if( scale <= 0.0f ) scale = 1.0f;
 
-        native_w = gpGlobals->width;
-        native_h = gpGlobals->height;
+        vp_w = gpGlobals->width;
+        vp_h = gpGlobals->height;
 
-        scaled_w = (int)(native_w / scale);
-        scaled_h = (int)(native_h / scale);
+        pglViewport( 0, 0, vp_w, vp_h );
 
-        offset_center_x = (native_w - scaled_w) / 2;
-        offset_center_y = (native_h - scaled_h) / 2;
-
-        pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
-        pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
-
-        pglMatrixMode(GL_PROJECTION);
+        pglMatrixMode( GL_PROJECTION );
         pglLoadIdentity();
-        pglOrtho(0, gpGlobals->width / scale, gpGlobals->height / scale, 0, -99999, 99999);
-        pglMatrixMode(GL_MODELVIEW);
+        pglOrtho( 0, vp_w / scale, vp_h / scale, 0, -99999, 99999 );
+        pglMatrixMode( GL_MODELVIEW );
         pglLoadIdentity();
 
-        pglDisable(GL_DEPTH_TEST);
-        pglDisable(GL_CULL_FACE);
+        GL_Cull( GL_NONE );
+
+        pglDepthMask( GL_FALSE );
+        pglDisable( GL_DEPTH_TEST );
+        pglEnable( GL_ALPHA_TEST );
+        pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+        if( glConfig.max_multisamples > 1 && gl_msaa.value )
+            pglDisable( GL_MULTISAMPLE_ARB );
+
+        glState.in2DMode = true;
+        RI.currententity = NULL;
+        RI.currentmodel = NULL;
     }
     else
     {
-        pglMatrixMode(GL_PROJECTION);
-        pglLoadIdentity();
-        pglOrtho(0, gpGlobals->width, gpGlobals->height, 0, -99999, 99999);
-        pglMatrixMode(GL_MODELVIEW);
-        pglLoadIdentity();
+        pglDepthMask( GL_TRUE );
+        pglEnable( GL_DEPTH_TEST );
+        glState.in2DMode = false;
 
-        pglViewport(0, 0, gpGlobals->width, gpGlobals->height);
-        pglScissor(0, 0, gpGlobals->width, gpGlobals->height);
+        pglMatrixMode( GL_PROJECTION );
+        GL_LoadMatrix( RI.projectionMatrix );
+
+        pglMatrixMode( GL_MODELVIEW );
+        GL_LoadMatrix( RI.worldviewMatrix );
+
+        if( glConfig.max_multisamples > 1 )
+        {
+            if( gl_msaa.value )
+                pglEnable( GL_MULTISAMPLE_ARB );
+            else pglDisable( GL_MULTISAMPLE_ARB );
+        }
+
+        GL_Cull( GL_FRONT );
     }
 }
