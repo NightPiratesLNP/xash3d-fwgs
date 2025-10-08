@@ -372,7 +372,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     if( !gpGlobals || gpGlobals->width <= 0 || gpGlobals->height <= 0 )
         return false;
 
-    scale = (float)RI.GetCvarFloat( "vid_scale" );
+    scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
     if( scale < 1.0f ) scale = 1.0f;
 
     native_w = gpGlobals->width;
@@ -384,8 +384,11 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     offset_center_x = (native_w - scaled_w) / 2;
     offset_center_y = (native_h - scaled_h) / 2;
 
-    pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
-    pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
+    if( pglViewport && pglScissor )
+    {
+        pglViewport(offset_center_x, offset_center_y, scaled_w, scaled_h);
+        pglScissor(offset_center_x, offset_center_y, scaled_w, scaled_h);
+    }
 
     return true;
 }
