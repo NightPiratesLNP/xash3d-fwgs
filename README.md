@@ -9,7 +9,7 @@ Xash3D FWGS is a heavily modified fork of an original [Xash3D Engine](https://ww
 
 ## Donate
 [![Donate to FWGS button](https://img.shields.io/badge/Donate_to_FWGS-%3C3-magenta)](Documentation/donate.md) \
-If you like Xash3D FWGS, consider supporting individual engine maintainers. By supporting us, you help to continue developing this game engine further. The sponsorship links are available in [documentation](Documentation/donate.md).
+If you like Xash3D FWGS, consider supporting individual engine maintainers. By supporting us, you help to continue developing this game engine further. The sponsorship links are available n [documentation](Documentation/donate.md).
 
 ## Fork features
 * Steam Half-Life (HLSDK 2.5) support.
