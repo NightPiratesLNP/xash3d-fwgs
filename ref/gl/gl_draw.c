@@ -234,7 +234,6 @@ void R_Set2DMode( qboolean enable )
 
         pglViewport( 0, 0, native_w, native_h );
         pglScissor( 0, 0, native_w, native_h );
-
         pglMatrixMode( GL_PROJECTION );
         pglLoadIdentity();
         pglOrtho( 0.0, (GLdouble)scaled_w, (GLdouble)scaled_h, 0.0, -99999.0, 99999.0 );
@@ -255,9 +254,6 @@ void R_Set2DMode( qboolean enable )
         glState.in2DMode = true;
         RI.currententity = NULL;
         RI.currentmodel = NULL;
-
-        gEngfuncs.Con_Printf( "R_Set2DMode: vid_scale=%.2f native=%dx%d scaled=%dx%d (viewport full)\n",
-            scale, native_w, native_h, scaled_w, scaled_h );
     }
     else
     {
