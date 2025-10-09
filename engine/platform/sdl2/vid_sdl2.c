@@ -1110,26 +1110,43 @@ Set the described video mode
 qboolean VID_SetMode( void )
 {
 	int iScreenWidth, iScreenHeight;
+	int cmdWidth = 0, cmdHeight = 0;
 	rserr_t	err;
 	window_mode_t window_mode;
 
 	iScreenWidth = Cvar_VariableInteger( "width" );
 	iScreenHeight = Cvar_VariableInteger( "height" );
 
-	if( iScreenWidth < VID_MIN_WIDTH ||
-		iScreenHeight < VID_MIN_HEIGHT )	// trying to get resolution automatically by default
-	{
-#if !defined( DEFAULT_MODE_WIDTH ) || !defined( DEFAULT_MODE_HEIGHT )
-		SDL_DisplayMode mode;
+    Sys_GetIntFromCmdLine("-width", &cmdWidth);
+    Sys_GetIntFromCmdLine("-height", &cmdHeight);
 
-		SDL_GetDesktopDisplayMode( 0, &mode );
+    if (cmdWidth > 0 && cmdHeight > 0)
+    {
+    	Con_Reportf("Using command-line resolution override: %dx%d\n", cmdWidth, cmdHeight);
+        iScreenWidth = cmdWidth;
+        iScreenHeight = cmdHeight;
+    }
+    else
+    {
+        iScreenWidth = Cvar_VariableInteger("width");
+        iScreenHeight = Cvar_VariableInteger("height");
+    }
 
-		iScreenWidth = mode.w;
-		iScreenHeight = mode.h;
-#else
-		iScreenWidth = DEFAULT_MODE_WIDTH;
-		iScreenHeight = DEFAULT_MODE_HEIGHT;
-#endif
+    if( iScreenWidth < VID_MIN_WIDTH || iScreenHeight < VID_MIN_HEIGHT )
+    {
+        SDL_DisplayMode mode;
+    	if( SDL_GetDesktopDisplayMode( 0, &mode ) == 0 )
+    	{
+        	iScreenWidth = mode.w;
+        	iScreenHeight = mode.h;
+        	Con_Reportf("Fallback to native resolution: %dx%d\n", iScreenWidth, iScreenHeight);
+    	}
+    	else
+    	{
+        	iScreenWidth = 800;
+        	iScreenHeight = 600;
+        	Con_Reportf("SDL_GetDesktopDisplayMode failed, using safe default 800x600\n");
+    	}
 	}
 
 #if XASH_MOBILE_PLATFORM
