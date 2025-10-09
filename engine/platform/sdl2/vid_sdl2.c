@@ -528,14 +528,14 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
 			return false;
 		}
 
-		if( got.w != want.w || got.h != want.h )
-			Con_Reportf( S_NOTE "Got closest display mode: %ix%i@%i\n", got.w, got.h, got.refresh_rate );
+#if XASH_MOBILE_PLATFORM
+        iScreenWidth = got.w;
+        iScreenHeight = got.h;
+#else
+        if ( SDL_SetWindowDisplayMode( host.hWnd, &got ) < 0 )
+             Con_Printf( S_ERROR "%s: SDL_SetWindowDisplayMode: %s", __func__, SDL_GetError());
+#endif
 
-		if( SDL_SetWindowDisplayMode( host.hWnd, &got ) < 0 )
-		{
-			Con_Printf( S_ERROR "%s: SDL_SetWindowDisplayMode: %s", __func__, SDL_GetError( ));
-			return false;
-		}
 
 		if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN ) < 0 )
 		{
