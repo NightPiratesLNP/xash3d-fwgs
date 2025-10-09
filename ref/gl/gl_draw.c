@@ -207,61 +207,44 @@ R_Set2DMode
 */
 void R_Set2DMode( qboolean enable )
 {
-    float scale;
-    int vp_w, vp_h;
+    static qboolean is2D = false;
 
     if( enable )
     {
-        if( glState.in2DMode )
-            return;
+        if( is2D ) return;
+        is2D = true;
 
-        scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+        float scale = (float)gEngfuncs.pfnGetCvarFloat("vid_scale");
         if( scale <= 0.0f ) scale = 1.0f;
 
-        vp_w = gpGlobals->width;
-        vp_h = gpGlobals->height;
+        int native_w = gpGlobals->width;
+        int native_h = gpGlobals->height;
+        int scaled_w = (int)(native_w / scale);
+        int scaled_h = (int)(native_h / scale);
 
-        pglViewport( 0, 0, vp_w, vp_h );
+        pglViewport(0, 0, native_w, native_h);
+        pglScissor(0, 0, native_w, native_h);
 
-        pglMatrixMode( GL_PROJECTION );
+        pglMatrixMode(GL_PROJECTION);
         pglLoadIdentity();
-        pglOrtho( 0, vp_w / scale, vp_h / scale, 0, -99999, 99999 );
-        pglMatrixMode( GL_MODELVIEW );
+        pglOrtho(0.0, scaled_w, scaled_h, 0.0, -99999.0, 99999.0);
+
+        pglMatrixMode(GL_MODELVIEW);
         pglLoadIdentity();
 
-        GL_Cull( GL_NONE );
-
-        pglDepthMask( GL_FALSE );
-        pglDisable( GL_DEPTH_TEST );
-        pglEnable( GL_ALPHA_TEST );
-        pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-
-        if( glConfig.max_multisamples > 1 && gl_msaa.value )
-            pglDisable( GL_MULTISAMPLE_ARB );
-
-        glState.in2DMode = true;
-        RI.currententity = NULL;
-        RI.currentmodel = NULL;
+        pglDisable(GL_DEPTH_TEST);
+        pglDisable(GL_CULL_FACE);
+        pglDisable(GL_BLEND);
     }
     else
     {
-        pglDepthMask( GL_TRUE );
-        pglEnable( GL_DEPTH_TEST );
-        glState.in2DMode = false;
-
-        pglMatrixMode( GL_PROJECTION );
-        GL_LoadMatrix( RI.projectionMatrix );
-
-        pglMatrixMode( GL_MODELVIEW );
-        GL_LoadMatrix( RI.worldviewMatrix );
-
-        if( glConfig.max_multisamples > 1 )
-        {
-            if( gl_msaa.value )
-                pglEnable( GL_MULTISAMPLE_ARB );
-            else pglDisable( GL_MULTISAMPLE_ARB );
-        }
-
-        GL_Cull( GL_FRONT );
+        if( !is2D ) return;
+        is2D = false;
+        pglMatrixMode(GL_PROJECTION);
+        pglLoadIdentity();
+        pglMatrixMode(GL_MODELVIEW);
+        pglLoadIdentity();
+        pglEnable(GL_DEPTH_TEST);
+        pglEnable(GL_CULL_FACE);
     }
 }
