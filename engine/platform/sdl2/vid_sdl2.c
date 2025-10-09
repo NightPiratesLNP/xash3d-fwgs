@@ -720,13 +720,11 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 					display_rects[i] = ( SDL_Rect ){ 0, 0, 0, 0 };
 				}
 			}
-			// Check if the rectangle fits in any display
 			if( !RectFitsInAnyDisplay( &rect, display_rects, num_displays ))
 			{
-				// Rectangle doesn't fit in any display, center it
 				xpos = SDL_WINDOWPOS_CENTERED;
 				ypos = SDL_WINDOWPOS_CENTERED;
-				Con_Printf( S_ERROR "Rectangle does not fit in any display. Centering window.\n" );
+				Con_Printf( S_WARN "Window rect does not fit display, centering.\n" );
 			}
 			else
 			{
@@ -739,12 +737,13 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	else
 	{
 		if( window_mode == WINDOW_MODE_FULLSCREEN )
-			// need input grab only in true fullscreen mode
 			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_INPUT_GRABBED );
 		else
 			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN_DESKTOP );
+
 		SetBits( wndFlags, SDL_WINDOW_BORDERLESS );
-		if ( window_xpos.value < 0 || window_ypos.value < 0 )
+
+		if( window_xpos.value < 0 || window_ypos.value < 0 )
 		{
 			xpos = SDL_WINDOWPOS_UNDEFINED;
 			ypos = SDL_WINDOWPOS_UNDEFINED;
@@ -759,7 +758,6 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	if( !VID_CreateWindowWithSafeGL( wndname, xpos, ypos, width, height, wndFlags ))
 		return false;
 
-	// update window size if it was maximized, just in case
 	if( FBitSet( SDL_GetWindowFlags( host.hWnd ), SDL_WINDOW_MAXIMIZED|SDL_WINDOW_FULLSCREEN_DESKTOP ) != 0 )
 		SDL_GetWindowSize( host.hWnd, &width, &height );
 
@@ -783,14 +781,37 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 
 		if( sdl_renderer >= -1 )
 		{
-			sw.renderer = SDL_CreateRenderer( host.hWnd, sdl_renderer, 0 );
+			sw.renderer = SDL_CreateRenderer( host.hWnd, sdl_renderer, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
 			if( !sw.renderer )
-				Con_Printf( S_ERROR "failed to create SDL renderer: %s\n", SDL_GetError() );
+				Con_Printf( S_ERROR "Failed to create SDL renderer: %s\n", SDL_GetError() );
 			else
 			{
 				SDL_RendererInfo info;
 				SDL_GetRendererInfo( sw.renderer, &info );
 				Con_Printf( "SDL_Renderer %s initialized\n", info.name );
+
+				float scale = 1.0f;
+				if( gEngfuncs.pfnGetCvarFloat )
+					scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+				if( scale <= 0.0f ) scale = 1.0f;
+
+				int native_w = width;
+				int native_h = height;
+				int scaled_w = (int)( native_w / scale );
+				int scaled_h = (int)( native_h / scale );
+
+				if( scaled_w < 1 ) scaled_w = 1;
+				if( scaled_h < 1 ) scaled_h = 1;
+
+				SDL_RenderSetLogicalSize( sw.renderer, scaled_w, scaled_h );
+
+#if SDL_VERSION_ATLEAST(2,0,5)
+				SDL_RenderSetIntegerScale( sw.renderer, SDL_FALSE );
+#endif
+				SDL_SetHint( SDL_HINT_RENDER_LOGICAL_SIZE_MODE, "stretch" );
+				SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" );
+
+				Con_Printf( "Set SDL_Renderer logical size: %dx%d (scale=%.2f)\n", scaled_w, scaled_h, scale );
 			}
 		}
 	}
@@ -801,7 +822,7 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 			glw_state.safe++;
 			if( glw_state.safe > SAFE_DONTCARE )
 				return false;
-			GL_SetupAttributes(); // re-choose attributes
+			GL_SetupAttributes();
 		}
 
 		if( !GL_UpdateContext( ))
@@ -809,9 +830,8 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	}
 
 	VID_SaveWindowSize( width, height, maximized );
-
 	return true;
-}
+}	
 
 /*
 =================
