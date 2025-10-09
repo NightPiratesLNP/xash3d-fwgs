@@ -712,7 +712,8 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 		}
 		else
 		{
-			for( int i = 0; i < num_displays; i++ )
+			int i;
+			for( i = 0; i < num_displays; i++ )
 			{
 				if( SDL_GetDisplayBounds( i, &display_rects[i] ) != 0 )
 				{
@@ -775,6 +776,9 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	{
 		int sdl_renderer = -2;
 		char cmd[64];
+		float scale;
+		int native_w, native_h;
+		int scaled_w, scaled_h;
 
 		if( Sys_GetParmFromCmdLine( "-sdl_renderer", cmd ))
 			sdl_renderer = Q_atoi( cmd );
@@ -790,15 +794,14 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 				SDL_GetRendererInfo( sw.renderer, &info );
 				Con_Printf( "SDL_Renderer %s initialized\n", info.name );
 
-				float scale = 1.0f;
-				if( gEngfuncs.pfnGetCvarFloat )
-					scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
-				if( scale <= 0.0f ) scale = 1.0f;
+				scale = Cvar_VariableValue( "vid_scale" );
+				if( scale <= 0.0f )
+					scale = 1.0f;
 
-				int native_w = width;
-				int native_h = height;
-				int scaled_w = (int)( native_w / scale );
-				int scaled_h = (int)( native_h / scale );
+				SDL_GetWindowSize( host.hWnd, &native_w, &native_h );
+
+				scaled_w = (int)( native_w / scale );
+				scaled_h = (int)( native_h / scale );
 
 				if( scaled_w < 1 ) scaled_w = 1;
 				if( scaled_h < 1 ) scaled_h = 1;
@@ -811,7 +814,8 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 				SDL_SetHint( SDL_HINT_RENDER_LOGICAL_SIZE_MODE, "stretch" );
 				SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" );
 
-				Con_Printf( "Set SDL_Renderer logical size: %dx%d (scale=%.2f)\n", scaled_w, scaled_h, scale );
+				Con_Printf( "SDL_Renderer logical size set: %dx%d (vid_scale=%.2f, native=%dx%d)\n",
+					scaled_w, scaled_h, scale, native_w, native_h );
 			}
 		}
 	}
@@ -831,7 +835,7 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 
 	VID_SaveWindowSize( width, height, maximized );
 	return true;
-}	
+}
 
 /*
 =================
