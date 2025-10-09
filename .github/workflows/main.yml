@@ -14,43 +14,43 @@ jobs:
           - os: ubuntu-22.04
             targetos: linux
             targetarch: i386
-          - os: ubuntu-22.04
-            targetos: linux
-            targetarch: arm64
-            cross: true
-          - os: ubuntu-22.04
-            targetos: linux
-            targetarch: armhf
-            cross: true
-          - os: ubuntu-24.04
-            targetos: linux
-            targetarch: riscv64
-            cross: true
-          - os: ubuntu-22.04
-            targetos: linux
-            targetarch: ppc64el
-            cross: true
+#          - os: ubuntu-22.04
+#            targetos: linux
+#            targetarch: arm64
+#            cross: true
+#          - os: ubuntu-22.04
+#            targetos: linux
+#            targetarch: armhf
+#            cross: true
+#          - os: ubuntu-24.04
+#            targetos: linux
+#            targetarch: riscv64
+#            cross: true
+#          - os: ubuntu-22.04
+#            targetos: linux
+#            targetarch: ppc64el
+#            cross: true
           - os: ubuntu-latest
             targetos: android
             targetarch: multiarch
           - os: ubuntu-latest
             targetos: nswitch
             targetarch: arm64
-          - os: ubuntu-latest
-            targetos: psvita
-            targetarch: armv7hf
+#          - os: ubuntu-latest
+#            targetos: psvita
+#            targetarch: armv7hf
           - os: windows-latest
             targetos: win32
             targetarch: amd64
           - os: windows-2022
             targetos: win32
             targetarch: i386
-          - os: macos-14
-            targetos: apple
-            targetarch: arm64
-          - os: macos-13
-            targetos: apple
-            targetarch: amd64
+#          - os: macos-14
+#            targetos: apple
+#            targetarch: arm64
+#          - os: macos-13
+#            targetos: apple
+#            targetarch: amd64
     env:
       SDL_VERSION: 2.32.8
       FFMPEG_VERSION: 7.1
