@@ -208,19 +208,18 @@ R_Set2DMode
 void R_Set2DMode( qboolean enable )
 {
     static qboolean is2D = false;
+	float scale = (float)gEngfuncs.pfnGetCvarFloat("vid_scale");
+    int native_w = gpGlobals->width;
+    int native_h = gpGlobals->height;
+    int scaled_w = (int)(native_w / scale);
+    int scaled_h = (int)(native_h / scale);
 
     if( enable )
     {
         if( is2D ) return;
         is2D = true;
 
-        float scale = (float)gEngfuncs.pfnGetCvarFloat("vid_scale");
         if( scale <= 0.0f ) scale = 1.0f;
-
-        int native_w = gpGlobals->width;
-        int native_h = gpGlobals->height;
-        int scaled_w = (int)(native_w / scale);
-        int scaled_h = (int)(native_h / scale);
 
         pglViewport(0, 0, native_w, native_h);
         pglScissor(0, 0, native_w, native_h);
