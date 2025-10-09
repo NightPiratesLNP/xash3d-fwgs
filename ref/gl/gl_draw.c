@@ -207,43 +207,80 @@ R_Set2DMode
 */
 void R_Set2DMode( qboolean enable )
 {
-    static qboolean is2D = false;
-	float scale = (float)gEngfuncs.pfnGetCvarFloat("vid_scale");
-    int native_w = gpGlobals->width;
-    int native_h = gpGlobals->height;
-    int scaled_w = (int)(native_w / scale);
-    int scaled_h = (int)(native_h / scale);
+    float scale;
+    int native_w, native_h;
+    int scaled_w, scaled_h;
 
     if( enable )
     {
-        if( is2D ) return;
-        is2D = true;
+        if( glState.in2DMode )
+            return;
 
-        if( scale <= 0.0f ) scale = 1.0f;
+        scale = 1.0f;
+        if( gEngfuncs.pfnGetCvarFloat )
+            scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
 
-        pglViewport(0, 0, native_w, native_h);
-        pglScissor(0, 0, native_w, native_h);
+        if( scale <= 0.0f )
+            scale = 1.0f;
 
-        pglMatrixMode(GL_PROJECTION);
+        native_w = gpGlobals->width;
+        native_h = gpGlobals->height;
+
+        scaled_w = (int)( native_w / scale );
+        scaled_h = (int)( native_h / scale );
+
+        if( scaled_w < 1 ) scaled_w = 1;
+        if( scaled_h < 1 ) scaled_h = 1;
+
+        pglViewport( 0, 0, native_w, native_h );
+        pglScissor( 0, 0, native_w, native_h );
+
+        pglMatrixMode( GL_PROJECTION );
         pglLoadIdentity();
-        pglOrtho(0.0, scaled_w, scaled_h, 0.0, -99999.0, 99999.0);
+        pglOrtho( 0.0, (GLdouble)scaled_w, (GLdouble)scaled_h, 0.0, -99999.0, 99999.0 );
 
-        pglMatrixMode(GL_MODELVIEW);
+        pglMatrixMode( GL_MODELVIEW );
         pglLoadIdentity();
 
-        pglDisable(GL_DEPTH_TEST);
-        pglDisable(GL_CULL_FACE);
-        pglDisable(GL_BLEND);
+        GL_Cull( GL_NONE );
+
+        pglDepthMask( GL_FALSE );
+        pglDisable( GL_DEPTH_TEST );
+        pglEnable( GL_ALPHA_TEST );
+        pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+        if( glConfig.max_multisamples > 1 && gl_msaa.value )
+            pglDisable( GL_MULTISAMPLE_ARB );
+
+        glState.in2DMode = true;
+        RI.currententity = NULL;
+        RI.currentmodel = NULL;
+
+        gEngfuncs.Con_Printf( "R_Set2DMode: vid_scale=%.2f native=%dx%d scaled=%dx%d (viewport full)\n",
+            scale, native_w, native_h, scaled_w, scaled_h );
     }
     else
     {
-        if( !is2D ) return;
-        is2D = false;
-        pglMatrixMode(GL_PROJECTION);
-        pglLoadIdentity();
-        pglMatrixMode(GL_MODELVIEW);
-        pglLoadIdentity();
-        pglEnable(GL_DEPTH_TEST);
-        pglEnable(GL_CULL_FACE);
+        if( !glState.in2DMode )
+            return;
+
+        pglDepthMask( GL_TRUE );
+        pglEnable( GL_DEPTH_TEST );
+        glState.in2DMode = false;
+
+        pglMatrixMode( GL_PROJECTION );
+        GL_LoadMatrix( RI.projectionMatrix );
+
+        pglMatrixMode( GL_MODELVIEW );
+        GL_LoadMatrix( RI.worldviewMatrix );
+
+        if( glConfig.max_multisamples > 1 )
+        {
+            if( gl_msaa.value )
+                pglEnable( GL_MULTISAMPLE_ARB );
+            else pglDisable( GL_MULTISAMPLE_ARB );
+        }
+
+        GL_Cull( GL_FRONT );
     }
 }
