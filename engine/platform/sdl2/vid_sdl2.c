@@ -523,14 +523,24 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
     }
 
 #if XASH_MOBILE_PLATFORM
-    extern void Android_GetScreenRes( int *w, int *h );
-    Android_GetScreenRes( &native_w, &native_h );
+    SDL_DisplayMode currentMode;
+
+    if( SDL_GetDesktopDisplayMode( 0, &currentMode ) < 0 )
+    {
+        Con_Printf( S_ERROR "%s: SDL_GetDesktopDisplayMode failed: %s\n", __func__, SDL_GetError( ));
+        native_w = 0;
+        native_h = 0;
+    }
+    else
+    {
+        native_w = currentMode.w;
+        native_h = currentMode.h;
+    }
 
     if( native_w <= 0 || native_h <= 0 )
     {
-        SDL_GetDesktopDisplayMode( 0, &mode );
-        native_w = mode.w;
-        native_h = mode.h;
+        native_w = 1920;
+        native_h = 1080;
     }
 
     SDL_SetWindowSize( host.hWnd, native_w, native_h );
@@ -539,7 +549,7 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
     Cvar_Set( "width", va( "%d", iScreenWidth ));
     Cvar_Set( "height", va( "%d", iScreenHeight ));
 
-    Con_Reportf( "VID_SetScreenResolution(Android): requested %dx%d, display %dx%d (render scale mode)\n",
+    Con_Reportf( "VID_SetScreenResolution(Android): requested %dx%d, native %dx%d\n",
                  iScreenWidth, iScreenHeight, native_w, native_h );
 
     VID_SaveWindowSize( iScreenWidth, iScreenHeight, true );
