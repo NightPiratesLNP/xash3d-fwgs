@@ -233,12 +233,11 @@ void R_Set2DMode( qboolean enable )
         if( scaled_w < 1 ) scaled_w = 1;
         if( scaled_h < 1 ) scaled_h = 1;
 
-        offset_x = (scaled_w - native_w) * 0.5f;
-        offset_y = (scaled_h - native_h) * 0.5f;
+        offset_x = (native_w - scaled_w) * 0.5f;
+        offset_y = (native_h - scaled_h) * 0.5f;
 
-        pglViewport( 0, 0, native_w, native_h );
-        pglScissor( 0, 0, native_w, native_h );
-
+        pglViewport( offset_x, offset_y, scaled_w, scaled_h );
+        pglScissor( offset_x, offset_y, scaled_w, scaled_h );
         pglMatrixMode( GL_PROJECTION );
         pglLoadIdentity();
         pglOrtho( -offset_x, scaled_w - offset_x, scaled_h - offset_y, -offset_y, -99999.0, 99999.0 );
