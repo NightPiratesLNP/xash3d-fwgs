@@ -496,91 +496,47 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
 {
     SDL_DisplayMode got, mode;
     Uint32 wndFlags = 0;
-    int iScreenWidth, iScreenHeight;
-#if XASH_MOBILE_PLATFORM
-    int native_w = 0, native_h = 0;
-#endif
 
     if( vid_highdpi.value )
         SetBits( wndFlags, SDL_WINDOW_ALLOW_HIGHDPI );
 
     SDL_SetWindowBordered( host.hWnd, SDL_FALSE );
 
-    iScreenWidth = width;
-    iScreenHeight = height;
-
-    if( iScreenWidth < VID_MIN_WIDTH || iScreenHeight < VID_MIN_HEIGHT )
+    if( width < VID_MIN_WIDTH || height < VID_MIN_HEIGHT )
     {
-        iScreenWidth = Cvar_VariableInteger( "width" );
-        iScreenHeight = Cvar_VariableInteger( "height" );
-
-        if( iScreenWidth < VID_MIN_WIDTH || iScreenHeight < VID_MIN_HEIGHT )
-        {
-            SDL_GetDesktopDisplayMode( 0, &mode );
-            iScreenWidth = mode.w;
-            iScreenHeight = mode.h;
-        }
+        SDL_GetDesktopDisplayMode( 0, &mode );
+        width = mode.w;
+        height = mode.h;
     }
 
-#if XASH_MOBILE_PLATFORM
-    SDL_DisplayMode currentMode;
-
-    if( SDL_GetDesktopDisplayMode( 0, &currentMode ) < 0 )
-    {
-        Con_Printf( S_ERROR "%s: SDL_GetDesktopDisplayMode failed: %s\n", __func__, SDL_GetError( ));
-        native_w = 0;
-        native_h = 0;
-    }
-    else
-    {
-        native_w = currentMode.w;
-        native_h = currentMode.h;
-    }
-
-    if( native_w <= 0 || native_h <= 0 )
-    {
-        native_w = 1920;
-        native_h = 1080;
-    }
-
-    SDL_SetWindowSize( host.hWnd, native_w, native_h );
-    SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN_DESKTOP );
-
-    Cvar_Set( "width", va( "%d", iScreenWidth ));
-    Cvar_Set( "height", va( "%d", iScreenHeight ));
-
-    Con_Reportf( "VID_SetScreenResolution(Android): requested %dx%d, native %dx%d\n",
-                 iScreenWidth, iScreenHeight, native_w, native_h );
-
-    VID_SaveWindowSize( iScreenWidth, iScreenHeight, true );
-    return true;
-#else
     if( window_mode == WINDOW_MODE_BORDERLESS )
     {
         if( SDL_GetDesktopDisplayMode( 0, &got ) < 0 )
         {
-            Con_Printf( S_ERROR "%s: SDL_GetDesktopDisplayMode: %s", __func__, SDL_GetError( ));
+            Con_Printf( S_ERROR "%s: SDL_GetDesktopDisplayMode: %s\n", __func__, SDL_GetError( ));
             return false;
         }
 
         if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN_DESKTOP ) < 0 )
         {
-            Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (borderless): %s", __func__, SDL_GetError( ));
+            Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (borderless): %s\n", __func__, SDL_GetError( ));
             return false;
         }
 
-        iScreenWidth = got.w;
-        iScreenHeight = got.h;
+        width = got.w;
+        height = got.h;
     }
     else if( window_mode == WINDOW_MODE_FULLSCREEN )
     {
         SDL_DisplayMode want = { 0 };
-        want.w = iScreenWidth;
-        want.h = iScreenHeight;
+        want.w = width;
+        want.h = height;
+        want.refresh_rate = 0;
+        want.format = 0;
 
         if( SDL_GetClosestDisplayMode( 0, &want, &got ) == NULL )
         {
-            Con_Printf( S_ERROR "%s: SDL_GetClosestDisplayMode: %s", __func__, SDL_GetError( ));
+            Con_Printf( S_ERROR "%s: SDL_GetClosestDisplayMode: %s\n", __func__, SDL_GetError( ));
             return false;
         }
 
@@ -589,43 +545,56 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
 
         if( SDL_SetWindowDisplayMode( host.hWnd, &got ) < 0 )
         {
-            Con_Printf( S_ERROR "%s: SDL_SetWindowDisplayMode: %s", __func__, SDL_GetError( ));
+            Con_Printf( S_ERROR "%s: SDL_SetWindowDisplayMode: %s\n", __func__, SDL_GetError( ));
             return false;
         }
 
         if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN ) < 0 )
         {
-            Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (fullscreen): %s", __func__, SDL_GetError( ));
+            Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (fullscreen): %s\n", __func__, SDL_GetError( ));
             return false;
         }
 
-        iScreenWidth = got.w;
-        iScreenHeight = got.h;
+        width = got.w;
+        height = got.h;
     }
     else
     {
         SDL_GetDesktopDisplayMode( 0, &mode );
-        if( iScreenWidth > mode.w || iScreenHeight > mode.h )
+        if( width > mode.w || height > mode.h )
         {
             Con_Reportf( S_WARN "Requested window size %dx%d too big, clamping to desktop %dx%d\n",
-                iScreenWidth, iScreenHeight, mode.w, mode.h );
-            iScreenWidth = mode.w;
-            iScreenHeight = mode.h;
+                width, height, mode.w, mode.h );
+            width = mode.w;
+            height = mode.h;
         }
-
         SDL_SetWindowFullscreen( host.hWnd, 0 );
-        SDL_SetWindowSize( host.hWnd, iScreenWidth, iScreenHeight );
+        SDL_SetWindowResizable( host.hWnd, SDL_TRUE );
+        SDL_SetWindowBordered( host.hWnd, SDL_TRUE );
     }
 
-    VID_SaveWindowSize( iScreenWidth, iScreenHeight, true );
+    SDL_SetWindowSize( host.hWnd, width, height );
+    SDL_SetWindowPosition( host.hWnd, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED );
 
-    Con_Reportf( "VID_SetScreenResolution: using %dx%d (%s)\n",
-        iScreenWidth, iScreenHeight,
+    sdlState.prev_width = width;
+    sdlState.prev_height = height;
+
+    Cvar_Set( "width", va("%d", width) );
+    Cvar_Set( "height", va("%d", height) );
+
+    VID_SaveWindowSize( width, height, true );
+
+    Con_Reportf( "VID_SetScreenResolution: %dx%d (%s)\n",
+        width, height,
         window_mode == WINDOW_MODE_FULLSCREEN ? "fullscreen" :
         (window_mode == WINDOW_MODE_BORDERLESS ? "borderless" : "windowed") );
 
-    return true;
+#if XASH_MOBILE_PLATFORM
+    Con_Reportf( "VID_SetScreenResolution(Android): forcing SDL_WINDOW_FULLSCREEN_DESKTOP\n" );
+    SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN_DESKTOP );
 #endif
+
+    return true;
 }
 
 void VID_RestoreScreenResolution( void )
