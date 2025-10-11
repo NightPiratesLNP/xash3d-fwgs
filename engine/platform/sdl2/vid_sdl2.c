@@ -1098,16 +1098,38 @@ rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mod
 		return rserr_invalid_mode;
 	}
 
-	// check our desktop attributes
 	refState.desktopBitsPixel = SDL_BITSPERPIXEL( displayMode.format );
+
+#if XASH_MOBILE_PLATFORM
+	int cmdWidth = 0, cmdHeight = 0;
+	Sys_GetIntFromCmdLine("-width", &cmdWidth);
+	Sys_GetIntFromCmdLine("-height", &cmdHeight);
+
+	if( cmdWidth > 0 && cmdHeight > 0 )
+	{
+		width = cmdWidth;
+		height = cmdHeight;
+		Con_Reportf("Android override: using requested resolution %dx%d\n", width, height);
+	}
+	else
+	{
+		if( width <= 0 || height <= 0 )
+		{
+			width = displayMode.w;
+			height = displayMode.h;
+		}
+	}
+#else
 	if( window_mode == WINDOW_MODE_BORDERLESS )
 	{
 		width = displayMode.w;
 		height = displayMode.h;
 	}
+#endif
 
 	refState.fullScreen = window_mode != WINDOW_MODE_WINDOWED;
-	Con_Reportf( "%s: Setting video mode to %dx%d %s\n", __func__, width, height, refState.fullScreen ? "fullscreen" : "windowed" );
+	Con_Reportf( "%s: Setting video mode to %dx%d %s\n", __func__, width, height,
+		refState.fullScreen ? "fullscreen" : "windowed" );
 
 	if( !host.hWnd )
 	{
