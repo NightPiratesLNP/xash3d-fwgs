@@ -1091,6 +1091,9 @@ qboolean R_Init_Video( const int type )
 rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mode )
 {
 	SDL_DisplayMode displayMode;
+#if XASH_MOBILE_PLATFORM
+	int cmdWidth = 0, cmdHeight = 0;
+#endif
 
 	if( SDL_GetCurrentDisplayMode( 0, &displayMode ) < 0 )
 	{
@@ -1101,7 +1104,6 @@ rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mod
 	refState.desktopBitsPixel = SDL_BITSPERPIXEL( displayMode.format );
 
 #if XASH_MOBILE_PLATFORM
-	int cmdWidth = 0, cmdHeight = 0;
 	Sys_GetIntFromCmdLine("-width", &cmdWidth);
 	Sys_GetIntFromCmdLine("-height", &cmdHeight);
 
