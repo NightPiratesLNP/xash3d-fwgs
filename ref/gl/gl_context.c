@@ -387,8 +387,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 
     if( scale != 1.0f )
     {
-        scaledWidth = (int)(refState.width * scale);
-        scaledHeight = (int)(refState.height * scale);
+        scaledWidth = (int)(gpGlobals->width * scale);
+        scaledHeight = (int)(gpGlobals->height * scale);
 
         gEngfuncs.Con_Printf( "R_SetDisplayTransform: vid_scale=%.2f (%dx%d -> %dx%d)\n",
             scale, refState.width, refState.height, scaledWidth, scaledHeight );
