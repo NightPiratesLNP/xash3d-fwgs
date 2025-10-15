@@ -209,6 +209,7 @@ void R_Set2DMode( qboolean enable )
 {
 	static float lastScale = 1.0f;
 	float scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+
 	if( scale <= 0.0f ) scale = 1.0f;
 	scale = Q_min( scale, 1.0f );
 	scale = Q_max( scale, 0.25f );
