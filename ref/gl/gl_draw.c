@@ -207,21 +207,28 @@ R_Set2DMode
 */
 void R_Set2DMode( qboolean enable )
 {
+	static float lastScale = 1.0f;
+	float scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+	if( scale <= 0.0f ) scale = 1.0f;
+	scale = Q_min( scale, 1.0f );
+	scale = Q_max( scale, 0.25f );
+
 	if( enable )
 	{
 		if( glState.in2DMode )
 			return;
 
-		// set 2D virtual screen size
-		pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+		int scaledWidth = (int)(gpGlobals->width * scale);
+		int scaledHeight = (int)(gpGlobals->height * scale);
+
+		pglViewport( 0, 0, scaledWidth, scaledHeight );
 		pglMatrixMode( GL_PROJECTION );
 		pglLoadIdentity();
-		pglOrtho( 0, gpGlobals->width, gpGlobals->height, 0, -99999, 99999 );
+		pglOrtho( 0, scaledWidth, scaledHeight, 0, -99999, 99999 );
 		pglMatrixMode( GL_MODELVIEW );
 		pglLoadIdentity();
 
 		GL_Cull( GL_NONE );
-
 		pglDepthMask( GL_FALSE );
 		pglDisable( GL_DEPTH_TEST );
 		pglEnable( GL_ALPHA_TEST );
@@ -233,6 +240,8 @@ void R_Set2DMode( qboolean enable )
 		glState.in2DMode = true;
 		RI.currententity = NULL;
 		RI.currentmodel = NULL;
+
+		lastScale = scale;
 	}
 	else
 	{
@@ -250,9 +259,13 @@ void R_Set2DMode( qboolean enable )
 		{
 			if( gl_msaa.value )
 				pglEnable( GL_MULTISAMPLE_ARB );
-			else pglDisable( GL_MULTISAMPLE_ARB );
+			else
+				pglDisable( GL_MULTISAMPLE_ARB );
 		}
 
 		GL_Cull( GL_FRONT );
+
+		if( lastScale != 1.0f )
+			pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
 	}
 }
