@@ -366,25 +366,46 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 {
     qboolean ret = true;
     float scale;
+    int scaledWidth, scaledHeight;
+
+    scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+    if( scale <= 0.0f ) scale = 1.0f;
+    scale = Q_min( scale, 1.0f );
+    scale = Q_max( scale, 0.25f );
 
     if( rotate > 0 )
     {
-        gEngfuncs.Con_Printf("rotation transform not supported\n");
+        gEngfuncs.Con_Printf( "rotation transform not supported\n" );
         ret = false;
     }
 
     if( offset_x || offset_y )
     {
-        gEngfuncs.Con_Printf("offset transform not supported\n");
+        gEngfuncs.Con_Printf( "offset transform not supported\n" );
         ret = false;
     }
 
-    scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
-    if( scale <= 0.0f ) scale = 1.0f;
-
     if( scale != 1.0f )
     {
-        gEngfuncs.Con_Printf("R_SetDisplayTransform: vid_scale=%.2f (display transform will use projection scaling)\n", scale );
+        scaledWidth = (int)(refState.width * scale);
+        scaledHeight = (int)(refState.height * scale);
+
+        gEngfuncs.Con_Printf( "R_SetDisplayTransform: vid_scale=%.2f (%dx%d -> %dx%d)\n",
+            scale, refState.width, refState.height, scaledWidth, scaledHeight );
+
+        pglViewport( 0, 0, scaledWidth, scaledHeight );
+        pglScissor( 0, 0, scaledWidth, scaledHeight );
+
+        pglMatrixMode( GL_PROJECTION );
+        pglLoadIdentity();
+        pglOrtho( 0.0, scaledWidth, scaledHeight, 0.0, -99999.0, 99999.0 );
+        pglMatrixMode( GL_MODELVIEW );
+        pglLoadIdentity();
+    }
+    else
+    {
+        pglViewport( 0, 0, refState.width, refState.height );
+        pglScissor( 0, 0, refState.width, refState.height );
     }
 
     return ret;

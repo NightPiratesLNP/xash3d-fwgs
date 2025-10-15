@@ -494,107 +494,59 @@ void VID_SaveWindowSize( int width, int height, qboolean maximized )
 
 static qboolean VID_SetScreenResolution( int width, int height, window_mode_t window_mode )
 {
-    SDL_DisplayMode got, mode;
-    Uint32 wndFlags = 0;
+	SDL_DisplayMode got;
+	Uint32 wndFlags = 0;
 
-    if( vid_highdpi.value )
-        SetBits( wndFlags, SDL_WINDOW_ALLOW_HIGHDPI );
+	if( vid_highdpi.value )
+		SetBits( wndFlags, SDL_WINDOW_ALLOW_HIGHDPI );
 
-    SDL_SetWindowBordered( host.hWnd, SDL_FALSE );
+	SDL_SetWindowBordered( host.hWnd, SDL_FALSE );
 
-    if( width < VID_MIN_WIDTH || height < VID_MIN_HEIGHT )
-    {
-        SDL_GetDesktopDisplayMode( 0, &mode );
-        width = mode.w;
-        height = mode.h;
-    }
+	if( window_mode == WINDOW_MODE_BORDERLESS )
+	{
+		if( SDL_GetDesktopDisplayMode( 0, &got ) < 0 )
+		{
+			Con_Printf( S_ERROR "%s: SDL_GetDesktopDisplayMode: %s", __func__, SDL_GetError( ));
+			return false;
+		}
 
-    if( window_mode == WINDOW_MODE_BORDERLESS )
-    {
-        if( SDL_GetDesktopDisplayMode( 0, &got ) < 0 )
-        {
-            Con_Printf( S_ERROR "%s: SDL_GetDesktopDisplayMode: %s\n", __func__, SDL_GetError( ));
-            return false;
-        }
+		if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN_DESKTOP ) < 0 )
+		{
+			Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (borderless): %s", __func__, SDL_GetError( ));
+			return false;
+		}
+	}
+	else if( window_mode == WINDOW_MODE_FULLSCREEN )
+	{
+		SDL_DisplayMode want = { 0 };
+		want.w = width;
+		want.h = height;
 
-        if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN_DESKTOP ) < 0 )
-        {
-            Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (borderless): %s\n", __func__, SDL_GetError( ));
-            return false;
-        }
+		if( SDL_GetClosestDisplayMode( 0, &want, &got ) == NULL )
+		{
+			Con_Printf( S_ERROR "%s: SDL_GetClosestDisplayMode: %s", __func__, SDL_GetError( ));
+			return false;
+		}
 
-        width = got.w;
-        height = got.h;
-    }
-    else if( window_mode == WINDOW_MODE_FULLSCREEN )
-    {
-        SDL_DisplayMode want = { 0 };
-        want.w = width;
-        want.h = height;
-        want.refresh_rate = 0;
-        want.format = 0;
+		if( got.w != want.w || got.h != want.h )
+			Con_Reportf( S_NOTE "Got closest display mode: %ix%i@%i\n", got.w, got.h, got.refresh_rate );
 
-        if( SDL_GetClosestDisplayMode( 0, &want, &got ) == NULL )
-        {
-            Con_Printf( S_ERROR "%s: SDL_GetClosestDisplayMode: %s\n", __func__, SDL_GetError( ));
-            return false;
-        }
+		if( SDL_SetWindowDisplayMode( host.hWnd, &got ) < 0 )
+		{
+			Con_Printf( S_ERROR "%s: SDL_SetWindowDisplayMode: %s", __func__, SDL_GetError( ));
+			return false;
+		}
 
-        if( got.w != want.w || got.h != want.h )
-            Con_Reportf( S_NOTE "Got closest display mode: %ix%i@%i\n", got.w, got.h, got.refresh_rate );
+		if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN ) < 0 )
+		{
+			Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (fullscreen): %s", __func__, SDL_GetError( ));
+			return false;
+		}
+	}
 
-        if( SDL_SetWindowDisplayMode( host.hWnd, &got ) < 0 )
-        {
-            Con_Printf( S_ERROR "%s: SDL_SetWindowDisplayMode: %s\n", __func__, SDL_GetError( ));
-            return false;
-        }
-
-        if( SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN ) < 0 )
-        {
-            Con_Printf( S_ERROR "%s: SDL_SetWindowFullscreen (fullscreen): %s\n", __func__, SDL_GetError( ));
-            return false;
-        }
-
-        width = got.w;
-        height = got.h;
-    }
-    else
-    {
-        SDL_GetDesktopDisplayMode( 0, &mode );
-        if( width > mode.w || height > mode.h )
-        {
-            Con_Reportf( S_WARN "Requested window size %dx%d too big, clamping to desktop %dx%d\n",
-                width, height, mode.w, mode.h );
-            width = mode.w;
-            height = mode.h;
-        }
-        SDL_SetWindowFullscreen( host.hWnd, 0 );
-        SDL_SetWindowResizable( host.hWnd, SDL_TRUE );
-        SDL_SetWindowBordered( host.hWnd, SDL_TRUE );
-    }
-
-    SDL_SetWindowSize( host.hWnd, width, height );
-    SDL_SetWindowPosition( host.hWnd, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED );
-
-    sdlState.prev_width = width;
-    sdlState.prev_height = height;
-
-    Cvar_Set( "width", va("%d", width) );
-    Cvar_Set( "height", va("%d", height) );
-
-    VID_SaveWindowSize( width, height, true );
-
-    Con_Reportf( "VID_SetScreenResolution: %dx%d (%s)\n",
-        width, height,
-        window_mode == WINDOW_MODE_FULLSCREEN ? "fullscreen" :
-        (window_mode == WINDOW_MODE_BORDERLESS ? "borderless" : "windowed") );
-
-#if XASH_MOBILE_PLATFORM
-    Con_Reportf( "VID_SetScreenResolution(Android): forcing SDL_WINDOW_FULLSCREEN_DESKTOP\n" );
-    SDL_SetWindowFullscreen( host.hWnd, SDL_WINDOW_FULLSCREEN_DESKTOP );
-#endif
-
-    return true;
+	SDL_SetWindowSize( host.hWnd, got.w, got.h );
+	VID_SaveWindowSize( got.w, got.h, true );
+	return true;
 }
 
 void VID_RestoreScreenResolution( void )
@@ -760,8 +712,7 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 		}
 		else
 		{
-			int i;
-			for( i = 0; i < num_displays; i++ )
+			for( int i = 0; i < num_displays; i++ )
 			{
 				if( SDL_GetDisplayBounds( i, &display_rects[i] ) != 0 )
 				{
@@ -769,11 +720,13 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 					display_rects[i] = ( SDL_Rect ){ 0, 0, 0, 0 };
 				}
 			}
+			// Check if the rectangle fits in any display
 			if( !RectFitsInAnyDisplay( &rect, display_rects, num_displays ))
 			{
+				// Rectangle doesn't fit in any display, center it
 				xpos = SDL_WINDOWPOS_CENTERED;
 				ypos = SDL_WINDOWPOS_CENTERED;
-				Con_Printf( S_WARN "Window rect does not fit display, centering.\n" );
+				Con_Printf( S_ERROR "Rectangle does not fit in any display. Centering window.\n" );
 			}
 			else
 			{
@@ -786,13 +739,12 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	else
 	{
 		if( window_mode == WINDOW_MODE_FULLSCREEN )
+			// need input grab only in true fullscreen mode
 			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_INPUT_GRABBED );
 		else
 			SetBits( wndFlags, SDL_WINDOW_FULLSCREEN_DESKTOP );
-
 		SetBits( wndFlags, SDL_WINDOW_BORDERLESS );
-
-		if( window_xpos.value < 0 || window_ypos.value < 0 )
+		if ( window_xpos.value < 0 || window_ypos.value < 0 )
 		{
 			xpos = SDL_WINDOWPOS_UNDEFINED;
 			ypos = SDL_WINDOWPOS_UNDEFINED;
@@ -807,6 +759,7 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	if( !VID_CreateWindowWithSafeGL( wndname, xpos, ypos, width, height, wndFlags ))
 		return false;
 
+	// update window size if it was maximized, just in case
 	if( FBitSet( SDL_GetWindowFlags( host.hWnd ), SDL_WINDOW_MAXIMIZED|SDL_WINDOW_FULLSCREEN_DESKTOP ) != 0 )
 		SDL_GetWindowSize( host.hWnd, &width, &height );
 
@@ -824,46 +777,20 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	{
 		int sdl_renderer = -2;
 		char cmd[64];
-		float scale;
-		int native_w, native_h;
-		int scaled_w, scaled_h;
 
 		if( Sys_GetParmFromCmdLine( "-sdl_renderer", cmd ))
 			sdl_renderer = Q_atoi( cmd );
 
 		if( sdl_renderer >= -1 )
 		{
-			sw.renderer = SDL_CreateRenderer( host.hWnd, sdl_renderer, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+			sw.renderer = SDL_CreateRenderer( host.hWnd, sdl_renderer, 0 );
 			if( !sw.renderer )
-				Con_Printf( S_ERROR "Failed to create SDL renderer: %s\n", SDL_GetError() );
+				Con_Printf( S_ERROR "failed to create SDL renderer: %s\n", SDL_GetError() );
 			else
 			{
 				SDL_RendererInfo info;
 				SDL_GetRendererInfo( sw.renderer, &info );
 				Con_Printf( "SDL_Renderer %s initialized\n", info.name );
-
-				scale = Cvar_VariableValue( "vid_scale" );
-				if( scale <= 0.0f )
-					scale = 1.0f;
-
-				SDL_GetWindowSize( host.hWnd, &native_w, &native_h );
-
-				scaled_w = (int)( native_w / scale );
-				scaled_h = (int)( native_h / scale );
-
-				if( scaled_w < 1 ) scaled_w = 1;
-				if( scaled_h < 1 ) scaled_h = 1;
-
-				SDL_RenderSetLogicalSize( sw.renderer, scaled_w, scaled_h );
-
-#if SDL_VERSION_ATLEAST(2,0,5)
-				SDL_RenderSetIntegerScale( sw.renderer, SDL_FALSE );
-#endif
-				SDL_SetHint( SDL_HINT_RENDER_LOGICAL_SIZE_MODE, "stretch" );
-				SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" );
-
-				Con_Printf( "SDL_Renderer logical size set: %dx%d (vid_scale=%.2f, native=%dx%d)\n",
-					scaled_w, scaled_h, scale, native_w, native_h );
 			}
 		}
 	}
@@ -874,7 +801,7 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 			glw_state.safe++;
 			if( glw_state.safe > SAFE_DONTCARE )
 				return false;
-			GL_SetupAttributes();
+			GL_SetupAttributes(); // re-choose attributes
 		}
 
 		if( !GL_UpdateContext( ))
@@ -882,6 +809,7 @@ qboolean VID_CreateWindow( int width, int height, window_mode_t window_mode )
 	}
 
 	VID_SaveWindowSize( width, height, maximized );
+
 	return true;
 }
 
@@ -1099,9 +1027,6 @@ qboolean R_Init_Video( const int type )
 rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mode )
 {
 	SDL_DisplayMode displayMode;
-#if XASH_MOBILE_PLATFORM
-	int cmdWidth = 0, cmdHeight = 0;
-#endif
 
 	if( SDL_GetCurrentDisplayMode( 0, &displayMode ) < 0 )
 	{
@@ -1109,37 +1034,16 @@ rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mod
 		return rserr_invalid_mode;
 	}
 
+	// check our desktop attributes
 	refState.desktopBitsPixel = SDL_BITSPERPIXEL( displayMode.format );
-
-#if XASH_MOBILE_PLATFORM
-	Sys_GetIntFromCmdLine("-width", &cmdWidth);
-	Sys_GetIntFromCmdLine("-height", &cmdHeight);
-
-	if( cmdWidth > 0 && cmdHeight > 0 )
-	{
-		width = cmdWidth;
-		height = cmdHeight;
-		Con_Reportf("Android override: using requested resolution %dx%d\n", width, height);
-	}
-	else
-	{
-		if( width <= 0 || height <= 0 )
-		{
-			width = displayMode.w;
-			height = displayMode.h;
-		}
-	}
-#else
 	if( window_mode == WINDOW_MODE_BORDERLESS )
 	{
 		width = displayMode.w;
 		height = displayMode.h;
 	}
-#endif
 
 	refState.fullScreen = window_mode != WINDOW_MODE_WINDOWED;
-	Con_Reportf( "%s: Setting video mode to %dx%d %s\n", __func__, width, height,
-		refState.fullScreen ? "fullscreen" : "windowed" );
+	Con_Reportf( "%s: Setting video mode to %dx%d %s\n", __func__, width, height, refState.fullScreen ? "fullscreen" : "windowed" );
 
 	if( !host.hWnd )
 	{
@@ -1182,43 +1086,26 @@ Set the described video mode
 qboolean VID_SetMode( void )
 {
 	int iScreenWidth, iScreenHeight;
-	int cmdWidth = 0, cmdHeight = 0;
 	rserr_t	err;
 	window_mode_t window_mode;
 
 	iScreenWidth = Cvar_VariableInteger( "width" );
 	iScreenHeight = Cvar_VariableInteger( "height" );
 
-    Sys_GetIntFromCmdLine("-width", &cmdWidth);
-    Sys_GetIntFromCmdLine("-height", &cmdHeight);
+	if( iScreenWidth < VID_MIN_WIDTH ||
+		iScreenHeight < VID_MIN_HEIGHT )	// trying to get resolution automatically by default
+	{
+#if !defined( DEFAULT_MODE_WIDTH ) || !defined( DEFAULT_MODE_HEIGHT )
+		SDL_DisplayMode mode;
 
-    if (cmdWidth > 0 && cmdHeight > 0)
-    {
-    	Con_Reportf("Using command-line resolution override: %dx%d\n", cmdWidth, cmdHeight);
-        iScreenWidth = cmdWidth;
-        iScreenHeight = cmdHeight;
-    }
-    else
-    {
-        iScreenWidth = Cvar_VariableInteger("width");
-        iScreenHeight = Cvar_VariableInteger("height");
-    }
+		SDL_GetDesktopDisplayMode( 0, &mode );
 
-    if( iScreenWidth < VID_MIN_WIDTH || iScreenHeight < VID_MIN_HEIGHT )
-    {
-        SDL_DisplayMode mode;
-    	if( SDL_GetDesktopDisplayMode( 0, &mode ) == 0 )
-    	{
-        	iScreenWidth = mode.w;
-        	iScreenHeight = mode.h;
-        	Con_Reportf("Fallback to native resolution: %dx%d\n", iScreenWidth, iScreenHeight);
-    	}
-    	else
-    	{
-        	iScreenWidth = 800;
-        	iScreenHeight = 600;
-        	Con_Reportf("SDL_GetDesktopDisplayMode failed, using safe default 800x600\n");
-    	}
+		iScreenWidth = mode.w;
+		iScreenHeight = mode.h;
+#else
+		iScreenWidth = DEFAULT_MODE_WIDTH;
+		iScreenHeight = DEFAULT_MODE_HEIGHT;
+#endif
 	}
 
 #if XASH_MOBILE_PLATFORM
