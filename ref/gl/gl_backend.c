@@ -13,52 +13,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+
 #include "gl_local.h"
 #include "xash3d_mathlib.h"
 
-static GLuint scaleFBO = 0;
-static GLuint scaleTex = 0;
-static int scaleWidth = 0;
-static int scaleHeight = 0;
-static qboolean scaleEnabled = false;
 static char r_speeds_msg[MAX_SYSPATH];
 ref_speeds_t r_stats; // r_speeds counters
-
-static void GL_CreateScaleFBO(int width, int height, float scale)
-{
-    scaleWidth = (int)(width * scale);
-    scaleHeight = (int)(height * scale);
-
-    if (scaleFBO)
-    {
-        pglDeleteFramebuffers(1, &scaleFBO);
-        pglDeleteTextures(1, &scaleTex);
-        scaleFBO = 0;
-        scaleTex = 0;
-    }
-
-    pglGenFramebuffers(1, &scaleFBO);
-    pglBindFramebuffer(GL_FRAMEBUFFER, scaleFBO);
-
-    pglGenTextures(1, &scaleTex);
-    pglBindTexture(GL_TEXTURE_2D, scaleTex);
-    pglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, scaleWidth, scaleHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    pglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scaleTex, 0);
-
-    GLenum status = pglCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE)
-    {
-        gEngfuncs.Con_Printf("GL_CreateScaleFBO: incomplete framebuffer (%d)\n", status);
-        scaleEnabled = false;
-        return;
-    }
-
-    pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-    scaleEnabled = true;
-    gEngfuncs.Con_Printf("Render scale FBO created: %dx%d (scale=%.2f)\n", scaleWidth, scaleHeight, scale);
-}
 
 /*
 ===============
@@ -90,33 +50,6 @@ GL_BackendStartFrame
 void GL_BackendStartFrame( void )
 {
 	r_speeds_msg[0] = '\0';
-
-	float scale = gEngfuncs.pfnGetCvarFloat("vid_scale");
-	if (scale <= 0.0f) scale = 1.0f;
-	scale = Q_min(scale, 1.0f);
-	scale = Q_max(scale, 0.25f);
-
-	int screenW = gpGlobals->width;
-	int screenH = gpGlobals->height;
-
-	if (scale < 1.0f)
-	{
-		if (!scaleFBO || scaleWidth != (int)(screenW * scale) || scaleHeight != (int)(screenH * scale))
-			GL_CreateScaleFBO(screenW, screenH, scale);
-
-		if (scaleEnabled)
-		{
-			pglBindFramebuffer(GL_FRAMEBUFFER, scaleFBO);
-			pglViewport(0, 0, scaleWidth, scaleHeight);
-			pglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
-	}
-	else
-	{
-		scaleEnabled = false;
-		pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-		pglViewport(0, 0, screenW, screenH);
-	}
 }
 
 /*
@@ -127,21 +60,6 @@ GL_BackendEndFrame
 void GL_BackendEndFrame( void )
 {
 	mleaf_t	*curleaf;
-	int screenW = gpGlobals->width;
-	int screenH = gpGlobals->height;
-
-	if (scaleEnabled)
-	{
-		pglBindFramebuffer(GL_READ_FRAMEBUFFER, scaleFBO);
-		pglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		pglBlitFramebuffer(
-			0, 0, scaleWidth, scaleHeight,
-			0, 0, screenW, screenH,
-			GL_COLOR_BUFFER_BIT, GL_LINEAR
-		);
-
-		pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
 
 	if( r_speeds->value <= 0 || !RI.drawWorld )
 		return;
