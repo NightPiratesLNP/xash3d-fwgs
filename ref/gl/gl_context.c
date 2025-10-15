@@ -401,8 +401,8 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     }
     else
     {
-        pglViewport( 0, 0, refState.width, refState.height );
-        pglScissor( 0, 0, refState.width, refState.height );
+        pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+        pglScissor( 0, 0, gpGlobals->width, gpGlobals->height );
     }
 
     return ret;
