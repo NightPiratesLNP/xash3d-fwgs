@@ -144,6 +144,14 @@ void GL_BackendEndFrame( void )
 	}
 
 	memset( &r_stats, 0, sizeof( r_stats ));
+
+	if( scaleActive )
+	{
+		pglBindFramebuffer(GL_READ_FRAMEBUFFER, scaleFBO);
+		pglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		pglBlitFramebuffer( 0, 0, scaledW, scaledH, 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+		pglBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 }
 
 /*
