@@ -498,17 +498,16 @@ GL_CreateContext
 */
 static qboolean GL_CreateContext( void )
 {
-	if( ( glw_state.context = SDL_GL_CreateContext( host.hWnd ) ) == NULL)
+	glw_state.context = SDL_GL_CreateContext( host.hWnd );
+
+	if( !glw_state.context )
 	{
 		Con_Reportf( S_ERROR "%s: %s\n", __func__, SDL_GetError( ));
 		return GL_DeleteContext();
 	}
-	return true;
+	VID_CreateScaledFBO();
 
-	if (glw_state.context)
-	{
-		VID_CreateScaledFBO();
-	}
+	return true;
 }
 
 /*
@@ -605,22 +604,32 @@ void VID_RestoreScreenResolution( void )
 	switch((window_mode_t)vid_fullscreen.value )
 	{
 	case WINDOW_MODE_WINDOWED:
-		// TODO: this line is from very old SDL video backend
-		// figure out why we need it, because in windowed mode we
-		// always have borders
 		SDL_SetWindowBordered( host.hWnd, SDL_TRUE );
 		break;
 	case WINDOW_MODE_BORDERLESS:
 		// in borderless fullscreen we don't change screen resolution, so no-op
 		break;
 	case WINDOW_MODE_FULLSCREEN:
-		// TODO: we might want to not minimize window if current desktop mode
-		// and window mode are the same
 		SDL_MinimizeWindow( host.hWnd );
 		SDL_SetWindowFullscreen( host.hWnd, 0 );
 		break;
 	}
 #endif // !XASH_MOBILE_PLATFORM
+
+	if( scaleFBO )
+	{
+		pglDeleteFramebuffers( 1, &scaleFBO );
+		scaleFBO = 0;
+	}
+
+	if( scaleTex )
+	{
+		pglDeleteTextures( 1, &scaleTex );
+		scaleTex = 0;
+	}
+
+	scaledW = 0;
+	scaledH = 0;
 }
 
 static void VID_SetWindowIcon( SDL_Window *hWnd )
