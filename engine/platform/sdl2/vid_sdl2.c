@@ -26,11 +26,6 @@ GNU General Public License for more details.
 #include <vrtld.h>
 #endif // XASH_PSVITA
 
-static GLuint scaleFBO = 0;
-static GLuint scaleTex = 0;
-static int scaledW = 0;
-static int scaledH = 0;
-
 static vidmode_t *vidmodes = NULL;
 static int num_vidmodes = 0;
 static void GL_SetupAttributes( void );
@@ -47,43 +42,6 @@ struct
 	SDL_Surface *surf;
 	SDL_Surface *win;
 } sw;
-
-static void VID_CreateScaledFBO(void)
-{
-    float scale = Cvar_VariableValue("vid_scale");
-    if (scale <= 0.0f) scale = 1.0f;
-    if (scale > 1.0f) scale = 1.0f;
-    if (scale < 0.25f) scale = 0.25f;
-
-    int winW, winH;
-    SDL_GL_GetDrawableSize(host.hWnd, &winW, &winH);
-
-    scaledW = (int)(winW * scale);
-    scaledH = (int)(winH * scale);
-
-    if (scaleFBO)
-    {
-        pglDeleteFramebuffers(1, &scaleFBO);
-        pglDeleteTextures(1, &scaleTex);
-        scaleFBO = scaleTex = 0;
-    }
-
-    pglGenFramebuffers(1, &scaleFBO);
-    pglBindFramebuffer(GL_FRAMEBUFFER, scaleFBO);
-
-    pglGenTextures(1, &scaleTex);
-    pglBindTexture(GL_TEXTURE_2D, scaleTex);
-    pglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scaledW, scaledH, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    pglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scaleTex, 0);
-
-    GLenum status = pglCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE)
-        Con_Printf(S_ERROR "VID_CreateScaledFBO: framebuffer incomplete!\n");
-
-    pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
 
 void Platform_Minimize_f( void )
 {
@@ -498,15 +456,11 @@ GL_CreateContext
 */
 static qboolean GL_CreateContext( void )
 {
-	glw_state.context = SDL_GL_CreateContext( host.hWnd );
-
-	if( !glw_state.context )
+	if( ( glw_state.context = SDL_GL_CreateContext( host.hWnd ) ) == NULL)
 	{
 		Con_Reportf( S_ERROR "%s: %s\n", __func__, SDL_GetError( ));
 		return GL_DeleteContext();
 	}
-	VID_CreateScaledFBO();
-
 	return true;
 }
 
@@ -604,32 +558,22 @@ void VID_RestoreScreenResolution( void )
 	switch((window_mode_t)vid_fullscreen.value )
 	{
 	case WINDOW_MODE_WINDOWED:
+		// TODO: this line is from very old SDL video backend
+		// figure out why we need it, because in windowed mode we
+		// always have borders
 		SDL_SetWindowBordered( host.hWnd, SDL_TRUE );
 		break;
 	case WINDOW_MODE_BORDERLESS:
 		// in borderless fullscreen we don't change screen resolution, so no-op
 		break;
 	case WINDOW_MODE_FULLSCREEN:
+		// TODO: we might want to not minimize window if current desktop mode
+		// and window mode are the same
 		SDL_MinimizeWindow( host.hWnd );
 		SDL_SetWindowFullscreen( host.hWnd, 0 );
 		break;
 	}
 #endif // !XASH_MOBILE_PLATFORM
-
-	if( scaleFBO )
-	{
-		pglDeleteFramebuffers( 1, &scaleFBO );
-		scaleFBO = 0;
-	}
-
-	if( scaleTex )
-	{
-		pglDeleteTextures( 1, &scaleTex );
-		scaleTex = 0;
-	}
-
-	scaledW = 0;
-	scaledH = 0;
 }
 
 static void VID_SetWindowIcon( SDL_Window *hWnd )
@@ -905,25 +849,7 @@ static void GL_SetupAttributes( void )
 
 void GL_SwapBuffers( void )
 {
-    float scale = Cvar_VariableValue("vid_scale");
-    if (scale < 1.0f)
-    {
-        pglBindFramebuffer(GL_READ_FRAMEBUFFER, scaleFBO);
-        pglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-        int winW, winH;
-        SDL_GL_GetDrawableSize(host.hWnd, &winW, &winH);
-
-        pglBlitFramebuffer(
-            0, 0, scaledW, scaledH,
-            0, 0, winW, winH,
-            GL_COLOR_BUFFER_BIT, GL_LINEAR
-        );
-
-        pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    SDL_GL_SwapWindow(host.hWnd);
+	SDL_GL_SwapWindow( host.hWnd );
 }
 
 int GL_SetAttribute( int attr, int val )
