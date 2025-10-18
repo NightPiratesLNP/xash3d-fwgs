@@ -1053,25 +1053,25 @@ R_BeginFrame
 */
 void R_BeginFrame( qboolean clearScene )
 {
-	float scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
-	glConfig.softwareGammaUpdate = false;	// in case of possible fails
+    float scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+    glConfig.softwareGammaUpdate = false;	// in case of possible fails
 
-	if(( gl_clear->value || ENGINE_GET_PARM( PARM_DEV_OVERVIEW )) &&
-		clearScene && ENGINE_GET_PARM( PARM_CONNSTATE ) != ca_cinematic )
-	{
-		pglClear( GL_COLOR_BUFFER_BIT );
-	}
+    if(( gl_clear->value || ENGINE_GET_PARM( PARM_DEV_OVERVIEW )) &&
+        clearScene && ENGINE_GET_PARM( PARM_CONNSTATE ) != ca_cinematic )
+    {
+        pglClear( GL_COLOR_BUFFER_BIT );
+    }
 
-	R_CheckCvars();
+    R_CheckCvars();
 
-	R_Set2DMode( true );
+    R_Set2DMode( true );
 
-	// draw buffer stuff
-	pglDrawBuffer( GL_BACK );
+    // draw buffer stuff
+    pglDrawBuffer( GL_BACK );
 
-	// update texture parameters
-	if( FBitSet( gl_texture_nearest.flags|gl_lightmap_nearest.flags|gl_texture_anisotropy.flags|gl_texture_lodbias.flags, FCVAR_CHANGED ))
-		R_SetTextureParameters();
+    // update texture parameters
+    if( FBitSet( gl_texture_nearest.flags|gl_lightmap_nearest.flags|gl_texture_anisotropy.flags|gl_texture_lodbias.flags, FCVAR_CHANGED ))
+        R_SetTextureParameters();
 
     if( scale < 0.99f )
     {
@@ -1094,7 +1094,7 @@ void R_BeginFrame( qboolean clearScene )
             GL_DestroyScaleFBO();
     }
 
-	gEngfuncs.CL_ExtraUpdate ();
+    gEngfuncs.CL_ExtraUpdate ();
 }
 
 /*
@@ -1186,7 +1186,7 @@ void R_EndFrame( void )
 	// flush any remaining 2D bits
 	R_Set2DMode( false );
 
-	if( tr_scale_fbo.initialized )
+    if( tr_scale_fbo.initialized )
     {
         pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
         pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
