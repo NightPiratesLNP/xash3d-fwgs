@@ -732,12 +732,6 @@ static void R_RenderInfo_f( void )
 static void GL_InitExtensionsGLES( void )
 {
 	int extid;
-	
-	GL_CheckExtension( "GL_ARB_framebuffer_object", NULL, 0, "gl_framebuffer_object", GL_ARB_FRAMEBUFFER_OBJECT, 3.0f );
-	if( !GL_Support( GL_ARB_FRAMEBUFFER_OBJECT ))
-	{
-		GL_CheckExtension( "GL_EXT_framebuffer_object", NULL, 0, "gl_framebuffer_object", GL_ARB_FRAMEBUFFER_OBJECT, 0 );
-	}
 
 	// intialize wrapper type
 #if XASH_NANOGL
