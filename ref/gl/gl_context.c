@@ -92,7 +92,7 @@ void GL_CreateScaleFBO( void )
     pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     
-    if( GL_Support( GL_ARB_FRAMEBUFFER_OBJECT ))
+    if( GL_Support( GL_ARB_FRAMEBUFFER_OBJECT ) || GL_Support( GL_EXT_FRAMEBUFFER_OBJECT ))
     {
         pglGenFramebuffers( 1, &tr_scale_fbo.fbo );
         pglBindFramebuffer( GL_FRAMEBUFFER, tr_scale_fbo.fbo );
