@@ -700,6 +700,9 @@ typedef struct {
 } scale_fbo_t;
 
 extern scale_fbo_t		tr_scale_fbo;
+void GL_CreateScaleFBO( void );
+void GL_DestroyScaleFBO( void );
+
 extern glconfig_t		glConfig;
 extern glstate_t		glState;
 // move to engine
