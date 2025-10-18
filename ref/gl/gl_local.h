@@ -409,6 +409,7 @@ void R_PushScene( void );
 void R_PopScene( void );
 void R_DrawFog( void );
 int CL_FxBlend( cl_entity_t *e );
+#define GL_ARB_FRAMEBUFFER_OBJECT
 
 //
 // gl_rmath.c
