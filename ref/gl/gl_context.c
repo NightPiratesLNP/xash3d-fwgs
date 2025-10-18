@@ -21,11 +21,11 @@ GNU General Public License for more details.
 #if XASH_GL4ES
 #include "gl4es/include/gl4esinit.h"
 #endif
-
 ref_api_t      gEngfuncs;
 ref_globals_t *gpGlobals;
 ref_client_t  *gp_cl;
 ref_host_t    *gp_host;
+scale_fbo_t tr_scale_fbo = {0};
 
 void _Mem_Free( void *data, const char *filename, int fileline )
 {
@@ -35,6 +35,81 @@ void _Mem_Free( void *data, const char *filename, int fileline )
 void *_Mem_Alloc( poolhandle_t poolptr, size_t size, qboolean clear, const char *filename, int fileline )
 {
 	return gEngfuncs._Mem_Alloc( poolptr, size, clear, filename, fileline );
+}
+
+static void GL_CreateScaleFBO( void )
+{
+    float scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+    
+    if( scale >= 0.99f )
+    {
+        if( tr_scale_fbo.initialized )
+            GL_DestroyScaleFBO();
+        return;
+    }
+    
+    if( tr_scale_fbo.initialized && 
+        tr_scale_fbo.width == (int)(gpGlobals->width * scale) &&
+        tr_scale_fbo.height == (int)(gpGlobals->height * scale) )
+        return;
+        
+    if( tr_scale_fbo.initialized )
+        GL_DestroyScaleFBO();
+    
+    tr_scale_fbo.width = (int)(gpGlobals->width * scale);
+    tr_scale_fbo.height = (int)(gpGlobals->height * scale);
+    
+    if( tr_scale_fbo.width < 1 ) tr_scale_fbo.width = 1;
+    if( tr_scale_fbo.height < 1 ) tr_scale_fbo.height = 1;
+    
+    pglGenTextures( 1, &tr_scale_fbo.texture );
+    pglBindTexture( GL_TEXTURE_2D, tr_scale_fbo.texture );
+    pglTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, tr_scale_fbo.width, tr_scale_fbo.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+    pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    
+    pglGenFramebuffers( 1, &tr_scale_fbo.fbo );
+    pglBindFramebuffer( GL_FRAMEBUFFER, tr_scale_fbo.fbo );
+    pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tr_scale_fbo.texture, 0 );
+    
+    GLenum status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
+    if( status != GL_FRAMEBUFFER_COMPLETE )
+    {
+        gEngfuncs.Con_Printf( S_ERROR "Scale FBO creation failed: 0x%x\n", status );
+        GL_DestroyScaleFBO();
+        return;
+    }
+    
+    tr_scale_fbo.initialized = true;
+    pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    pglBindTexture( GL_TEXTURE_2D, 0 );
+    
+    gEngfuncs.Con_DPrintf( "Scale FBO created: %dx%d (scale: %.2f)\n", 
+                          tr_scale_fbo.width, tr_scale_fbo.height, scale );
+}
+
+void GL_DestroyScaleFBO( void )
+{
+    if( !tr_scale_fbo.initialized )
+        return;
+        
+    if( tr_scale_fbo.texture )
+    {
+        pglDeleteTextures( 1, &tr_scale_fbo.texture );
+        tr_scale_fbo.texture = 0;
+    }
+    
+    if( tr_scale_fbo.fbo )
+    {
+        pglDeleteFramebuffers( 1, &tr_scale_fbo.fbo );
+        tr_scale_fbo.fbo = 0;
+    }
+    
+    tr_scale_fbo.initialized = false;
+    tr_scale_fbo.width = 0;
+    tr_scale_fbo.height = 0;
 }
 
 static void R_ClearScreen( void )
