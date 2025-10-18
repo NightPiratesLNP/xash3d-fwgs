@@ -927,6 +927,18 @@ APIENTRY_LINKAGE GLenum GL_FUNCTION( glGetError )(void);
 APIENTRY_LINKAGE const GLubyte * GL_FUNCTION( glGetString )(GLenum name);
 APIENTRY_LINKAGE const GLubyte * GL_FUNCTION( glGetStringi )(GLenum name, GLint i);
 
+// FBO functions
+APIENTRY_LINKAGE void GL_FUNCTION( glGenFramebuffers )( GLsizei n, GLuint *framebuffers );
+APIENTRY_LINKAGE void GL_FUNCTION( glDeleteFramebuffers )( GLsizei n, const GLuint *framebuffers );
+APIENTRY_LINKAGE void GL_FUNCTION( glBindFramebuffer )( GLenum target, GLuint framebuffer );
+APIENTRY_LINKAGE void GL_FUNCTION( glFramebufferTexture2D )( GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level );
+APIENTRY_LINKAGE GLenum GL_FUNCTION( glCheckFramebufferStatus )( GLenum target );
+APIENTRY_LINKAGE void GL_FUNCTION( glGenRenderbuffers )( GLsizei n, GLuint *renderbuffers );
+APIENTRY_LINKAGE void GL_FUNCTION( glDeleteRenderbuffers )( GLsizei n, const GLuint *renderbuffers );
+APIENTRY_LINKAGE void GL_FUNCTION( glBindRenderbuffer )( GLenum target, GLuint renderbuffer );
+APIENTRY_LINKAGE void GL_FUNCTION( glRenderbufferStorage )( GLenum target, GLenum internalformat, GLsizei width, GLsizei height );
+APIENTRY_LINKAGE void GL_FUNCTION( glFramebufferRenderbuffer )( GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer );
+
 // base gl functions
 APIENTRY_LINKAGE void GL_FUNCTION( glAccum )(GLenum op, GLfloat value);
 APIENTRY_LINKAGE void GL_FUNCTION( glAlphaFunc )(GLenum func, GLclampf ref);
@@ -1867,6 +1879,16 @@ APIENTRY_LINKAGE void GL_FUNCTION( glTexImage2DMultisample )(GLenum target, GLsi
 #define pglGenVertexArrays glGenVertexArrays
 #define pglIsVertexArray glIsVertexArray
 #define pglSwapInterval glSwapInterval
+#define pglGenFramebuffers glGenFramebuffers
+#define pglDeleteFramebuffers glDeleteFramebuffers
+#define pglBindFramebuffer glBindFramebuffer
+#define pglFramebufferTexture2D glFramebufferTexture2D
+#define pglCheckFramebufferStatus glCheckFramebufferStatus
+#define pglGenRenderbuffers glGenRenderbuffers
+#define pglDeleteRenderbuffers glDeleteRenderbuffers
+#define pglBindRenderbuffer glBindRenderbuffer
+#define pglRenderbufferStorage glRenderbufferStorage
+#define pglFramebufferRenderbuffer glFramebufferRenderbuffer
 #endif
 
 #ifdef __GNUC__
