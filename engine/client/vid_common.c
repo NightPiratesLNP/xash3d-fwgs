@@ -143,7 +143,7 @@ void VID_SetDisplayTransform( int *render_w, int *render_h )
 {
 	uint rotate = vid_rotate.value;
 
-	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, vid_scale.value, vid_scale.value ))
+	if( ref.dllFuncs.R_SetDisplayTransform( rotate, 0, 0, 1, 1 ))
 	{
 		if( rotate & 1 )
 		{
