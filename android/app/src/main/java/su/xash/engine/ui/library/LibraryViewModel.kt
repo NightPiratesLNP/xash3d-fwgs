@@ -43,7 +43,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 val externalPath = Environment.getExternalStorageDirectory().absolutePath + "/xash"
                 val externalDir = File(externalPath)
                 
-                Nomedia.ensureNomedia(externalPath)
+                Nomedia.ensureNomedia(externalDir)
                 
                 if (internalDir.exists() && internalDir.isDirectory) {
                     games.addAll(Game.getGames(ctx, internalDir))
