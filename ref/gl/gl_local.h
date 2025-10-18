@@ -691,6 +691,15 @@ typedef struct
 	qboolean		extended;		// extended context allows to GL_Debug
 } glwstate_t;
 
+typedef struct {
+    GLuint fbo;
+    GLuint texture;
+    int width;
+    int height;
+    qboolean initialized;
+} scale_fbo_t;
+
+extern scale_fbo_t		tr_scale_fbo;
 extern glconfig_t		glConfig;
 extern glstate_t		glState;
 // move to engine
