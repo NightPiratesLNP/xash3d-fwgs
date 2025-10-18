@@ -90,7 +90,7 @@ static void GL_CreateScaleFBO( void )
                           tr_scale_fbo.width, tr_scale_fbo.height, scale );
 }
 
-void GL_DestroyScaleFBO( void )
+static void GL_DestroyScaleFBO( void )
 {
     if( !tr_scale_fbo.initialized )
         return;
