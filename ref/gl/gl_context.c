@@ -95,11 +95,11 @@ void GL_CreateScaleFBO( void )
     pglGenFramebuffers( 1, &tr_scale_fbo.fbo );
     pglBindFramebuffer( GL_FRAMEBUFFER, tr_scale_fbo.fbo );
     pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tr_scale_fbo.texture, 0 );
-    
-    GLenum status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
-    if( status != GL_FRAMEBUFFER_COMPLETE )
+
+    GLenum gl_error = pglGetError();
+    if( gl_error != GL_NO_ERROR )
     {
-        gEngfuncs.Con_Printf( S_ERROR "Scale FBO creation failed: 0x%x\n", status );
+        gEngfuncs.Con_Printf( S_ERROR "Scale FBO creation failed: 0x%x\n", gl_error );
         GL_DestroyScaleFBO();
         return;
     }
