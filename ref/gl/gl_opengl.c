@@ -1289,6 +1289,7 @@ void R_Shutdown( void )
 	if( !glw_state.initialized )
 		return;
 
+	GL_DestroyScaleFBO();
 	GL_RemoveCommands();
 	R_ShutdownImages();
 #if !XASH_GLES && !XASH_GL_STATIC
