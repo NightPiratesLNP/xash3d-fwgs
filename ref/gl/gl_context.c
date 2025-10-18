@@ -70,6 +70,13 @@ void GL_CreateScaleFBO( void )
         return;
     }
     
+    if( pglGenFramebuffers == NULL || pglBindFramebuffer == NULL || pglFramebufferTexture2D == NULL )
+    {
+        if( !tr_scale_fbo.initialized ) // Sadece bir kere uyarı ver
+            gEngfuncs.Con_Printf( S_ERROR "FBO functions not available, scaling disabled\n" );
+        return;
+    }
+    
     if( tr_scale_fbo.initialized && 
         tr_scale_fbo.width == (int)(gpGlobals->width * scale) &&
         tr_scale_fbo.height == (int)(gpGlobals->height * scale) )
@@ -92,30 +99,20 @@ void GL_CreateScaleFBO( void )
     pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     
-    if( GL_Support( GL_ARB_FRAMEBUFFER_OBJECT ) || GL_Support( GL_EXT_FRAMEBUFFER_OBJECT ))
+    pglGenFramebuffers( 1, &tr_scale_fbo.fbo );
+    pglBindFramebuffer( GL_FRAMEBUFFER, tr_scale_fbo.fbo );
+    pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tr_scale_fbo.texture, 0 );
+    
+    GLenum status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
+    if( status != GL_FRAMEBUFFER_COMPLETE )
     {
-        pglGenFramebuffers( 1, &tr_scale_fbo.fbo );
-        pglBindFramebuffer( GL_FRAMEBUFFER, tr_scale_fbo.fbo );
-        pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tr_scale_fbo.texture, 0 );
-        
-        GLenum status = pglCheckFramebufferStatus( GL_FRAMEBUFFER );
-        if( status != GL_FRAMEBUFFER_COMPLETE )
-        {
-            gEngfuncs.Con_Printf( S_ERROR "Scale FBO creation failed: 0x%x\n", status );
-            GL_DestroyScaleFBO();
-            return;
-        }
-        
-        tr_scale_fbo.initialized = true;
-        pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    }
-    else
-    {
-        gEngfuncs.Con_Printf( S_ERROR "FBO not supported, scaling disabled\n" );
+        gEngfuncs.Con_Printf( S_ERROR "Scale FBO creation failed: 0x%x\n", status );
         GL_DestroyScaleFBO();
         return;
     }
     
+    tr_scale_fbo.initialized = true;
+    pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
     pglBindTexture( GL_TEXTURE_2D, 0 );
     
     gEngfuncs.Con_DPrintf( "Scale FBO created: %dx%d (scale: %.2f)\n", 
