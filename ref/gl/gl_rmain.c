@@ -20,11 +20,11 @@ GNU General Public License for more details.
 #include "particledef.h"
 #include "entity_types.h"
 
-
 #define IsLiquidContents( cnt )	( cnt == CONTENTS_WATER || cnt == CONTENTS_SLIME || cnt == CONTENTS_LAVA )
 
 float		gldepthmin, gldepthmax;
 ref_instance_t	RI;
+extern scale_fbo_t tr_scale_fbo;
 
 static int R_RankForRenderMode( int rendermode )
 {
@@ -1053,6 +1053,7 @@ R_BeginFrame
 */
 void R_BeginFrame( qboolean clearScene )
 {
+	float scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
 	glConfig.softwareGammaUpdate = false;	// in case of possible fails
 
 	if(( gl_clear->value || ENGINE_GET_PARM( PARM_DEV_OVERVIEW )) &&
@@ -1071,6 +1072,27 @@ void R_BeginFrame( qboolean clearScene )
 	// update texture parameters
 	if( FBitSet( gl_texture_nearest.flags|gl_lightmap_nearest.flags|gl_texture_anisotropy.flags|gl_texture_lodbias.flags, FCVAR_CHANGED ))
 		R_SetTextureParameters();
+
+    if( scale < 0.99f )
+    {
+        GL_CreateScaleFBO();
+        if( tr_scale_fbo.initialized )
+        {
+            pglBindFramebuffer( GL_FRAMEBUFFER, tr_scale_fbo.fbo );
+            pglViewport( 0, 0, tr_scale_fbo.width, tr_scale_fbo.height );
+            
+            pglClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+            pglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+        }
+    }
+    else
+    {
+        pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+        pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+        
+        if( tr_scale_fbo.initialized )
+            GL_DestroyScaleFBO();
+    }
 
 	gEngfuncs.CL_ExtraUpdate ();
 }
@@ -1163,6 +1185,37 @@ void R_EndFrame( void )
 #endif
 	// flush any remaining 2D bits
 	R_Set2DMode( false );
+
+	if( tr_scale_fbo.initialized )
+    {
+        pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+        pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+        
+        R_Set2DMode( true );
+        
+        pglDisable( GL_DEPTH_TEST );
+        pglDisable( GL_ALPHA_TEST );
+        pglEnable( GL_TEXTURE_2D );
+        pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+        
+        pglBindTexture( GL_TEXTURE_2D, tr_scale_fbo.texture );
+        
+        pglBegin( GL_QUADS );
+            pglTexCoord2f( 0.0f, 1.0f );
+            pglVertex2f( 0.0f, 0.0f );
+            
+            pglTexCoord2f( 1.0f, 1.0f );
+            pglVertex2f( gpGlobals->width, 0.0f );
+            
+            pglTexCoord2f( 1.0f, 0.0f );
+            pglVertex2f( gpGlobals->width, gpGlobals->height );
+            
+            pglTexCoord2f( 0.0f, 0.0f );
+            pglVertex2f( 0.0f, gpGlobals->height );
+        pglEnd();
+        
+        pglBindTexture( GL_TEXTURE_2D, 0 );
+    }
 	gEngfuncs.GL_SwapBuffers();
 }
 
