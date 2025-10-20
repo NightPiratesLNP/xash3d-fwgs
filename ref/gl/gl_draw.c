@@ -210,28 +210,32 @@ void R_Set2DMode( qboolean enable )
 	if( enable )
 	{
 		matrix4x4 projection_matrix, worldview_matrix;
+		float scale = gEngfuncs.pfnGetCvarFloat("vid_scale");
+		if (scale <= 0.0f) scale = 1.0f;
 
 		if( glState.in2DMode )
 			return;
 
-		// set 2D virtual screen size
+		int scaledWidth = (int)(gpGlobals->width * scale);
+		int scaledHeight = (int)(gpGlobals->height * scale);
+
 		switch( tr.rotation )
 		{
 		case REF_ROTATE_CW:
-			pglViewport( 0, 0, gpGlobals->height, gpGlobals->width );
-			Matrix4x4_CreateOrtho( projection_matrix, 0, gpGlobals->height, gpGlobals->width, 0, -99999, 99999 );
+			pglViewport( 0, 0, scaledHeight, scaledWidth );
+			Matrix4x4_CreateOrtho( projection_matrix, 0, scaledHeight, scaledWidth, 0, -99999, 99999 );
 			Matrix4x4_ConcatRotate( projection_matrix, 90, 0, 0, 1 );
-			Matrix4x4_ConcatTranslate( projection_matrix, 0, -gpGlobals->height, 0 );
+			Matrix4x4_ConcatTranslate( projection_matrix, 0, -scaledHeight, 0 );
 			break;
 		case REF_ROTATE_CCW:
-			pglViewport( 0, 0, gpGlobals->height, gpGlobals->width );
-			Matrix4x4_CreateOrtho( projection_matrix, 0, gpGlobals->height, gpGlobals->width, 0, -99999, 99999 );
+			pglViewport( 0, 0, scaledHeight, scaledWidth );
+			Matrix4x4_CreateOrtho( projection_matrix, 0, scaledHeight, scaledWidth, 0, -99999, 99999 );
 			Matrix4x4_ConcatRotate( projection_matrix, -90, 0, 0, 1 );
-			Matrix4x4_ConcatTranslate( projection_matrix, -gpGlobals->width, 0, 0 );
+			Matrix4x4_ConcatTranslate( projection_matrix, -scaledWidth, 0, 0 );
 			break;
 		default:
-			pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
-			Matrix4x4_CreateOrtho( projection_matrix, 0, gpGlobals->width, gpGlobals->height, 0, -99999, 99999 );
+			pglViewport( 0, 0, scaledWidth, scaledHeight );
+			Matrix4x4_CreateOrtho( projection_matrix, 0, scaledWidth, scaledHeight, 0, -99999, 99999 );
 			break;
 		}
 
@@ -243,7 +247,6 @@ void R_Set2DMode( qboolean enable )
 		GL_LoadMatrix( worldview_matrix );
 
 		GL_Cull( GL_NONE );
-
 		pglDepthMask( GL_FALSE );
 		pglDisable( GL_DEPTH_TEST );
 		pglEnable( GL_ALPHA_TEST );
