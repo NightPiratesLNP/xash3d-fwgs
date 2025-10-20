@@ -1286,24 +1286,23 @@ R_Shutdown
 */
 void R_Shutdown( void )
 {
-    if( !glw_state.initialized )
-        return;
+	if( !glw_state.initialized )
+		return;
 
-    GL_DestroyScaleFBO();
-    
-    GL_RemoveCommands();
-    R_ShutdownImages();
+	GL_RemoveCommands();
+	R_ShutdownImages();
 #if !XASH_GLES && !XASH_GL_STATIC
-    GL2_ShimShutdown();
+	GL2_ShimShutdown();
 #endif
 
-    Mem_FreePool( &r_temppool );
+	Mem_FreePool( &r_temppool );
 
 #if XASH_GL4ES
-    close_gl4es();
+	close_gl4es();
 #endif // XASH_GL4ES
 
-    gEngfuncs.R_Free_Video();
+	// shut down OS specific OpenGL stuff like contexts, etc.
+	gEngfuncs.R_Free_Video();
 }
 
 /*
