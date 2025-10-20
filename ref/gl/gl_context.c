@@ -379,9 +379,6 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 	int scaledWidth = (int)(gpGlobals->width * scale);
 	int scaledHeight = (int)(gpGlobals->height * scale);
 
-	pglViewport(0, 0, scaledWidth, scaledHeight);
-	pglScissor(0, 0, scaledWidth, scaledHeight);
-
 	return ret;
 }
 
