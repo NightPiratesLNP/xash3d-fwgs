@@ -488,19 +488,6 @@ typedef float GLmatrix[16];
 #define GL_STENCIL_BACK_PASS_DEPTH_FAIL   	0x8802
 #define GL_STENCIL_BACK_PASS_DEPTH_PASS   	0x8803
 
-#define GL_FRAMEBUFFER				0x8D40
-#define GL_RENDERBUFFER			0x8D41
-#define GL_READ_FRAMEBUFFER		0x8CA8
-#define GL_DRAW_FRAMEBUFFER		0x8CA9
-#define GL_COLOR_ATTACHMENT0		0x8CE0
-#define GL_DEPTH_ATTACHMENT		0x8D00
-#define GL_STENCIL_ATTACHMENT		0x8D20
-#define GL_FRAMEBUFFER_COMPLETE		0x8CD5
-#define GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT	0x8CD6
-#define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT	0x8CD7
-#define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS	0x8CD9
-#define GL_FRAMEBUFFER_UNSUPPORTED	0x8CDD
-
 #define GL_MAX_DRAW_BUFFERS_ARB		0x8824
 #define GL_DRAW_BUFFER0_ARB			0x8825
 #define GL_DRAW_BUFFER1_ARB			0x8826
@@ -926,18 +913,6 @@ typedef float GLmatrix[16];
 APIENTRY_LINKAGE GLenum GL_FUNCTION( glGetError )(void);
 APIENTRY_LINKAGE const GLubyte * GL_FUNCTION( glGetString )(GLenum name);
 APIENTRY_LINKAGE const GLubyte * GL_FUNCTION( glGetStringi )(GLenum name, GLint i);
-
-// FBO functions
-APIENTRY_LINKAGE void GL_FUNCTION( glGenFramebuffers )( GLsizei n, GLuint *framebuffers );
-APIENTRY_LINKAGE void GL_FUNCTION( glDeleteFramebuffers )( GLsizei n, const GLuint *framebuffers );
-APIENTRY_LINKAGE void GL_FUNCTION( glBindFramebuffer )( GLenum target, GLuint framebuffer );
-APIENTRY_LINKAGE void GL_FUNCTION( glFramebufferTexture2D )( GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level );
-APIENTRY_LINKAGE GLenum GL_FUNCTION( glCheckFramebufferStatus )( GLenum target );
-APIENTRY_LINKAGE void GL_FUNCTION( glGenRenderbuffers )( GLsizei n, GLuint *renderbuffers );
-APIENTRY_LINKAGE void GL_FUNCTION( glDeleteRenderbuffers )( GLsizei n, const GLuint *renderbuffers );
-APIENTRY_LINKAGE void GL_FUNCTION( glBindRenderbuffer )( GLenum target, GLuint renderbuffer );
-APIENTRY_LINKAGE void GL_FUNCTION( glRenderbufferStorage )( GLenum target, GLenum internalformat, GLsizei width, GLsizei height );
-APIENTRY_LINKAGE void GL_FUNCTION( glFramebufferRenderbuffer )( GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer );
 
 // base gl functions
 APIENTRY_LINKAGE void GL_FUNCTION( glAccum )(GLenum op, GLfloat value);
@@ -1879,16 +1854,6 @@ APIENTRY_LINKAGE void GL_FUNCTION( glTexImage2DMultisample )(GLenum target, GLsi
 #define pglGenVertexArrays glGenVertexArrays
 #define pglIsVertexArray glIsVertexArray
 #define pglSwapInterval glSwapInterval
-#define pglGenFramebuffers glGenFramebuffers
-#define pglDeleteFramebuffers glDeleteFramebuffers
-#define pglBindFramebuffer glBindFramebuffer
-#define pglFramebufferTexture2D glFramebufferTexture2D
-#define pglCheckFramebufferStatus glCheckFramebufferStatus
-#define pglGenRenderbuffers glGenRenderbuffers
-#define pglDeleteRenderbuffers glDeleteRenderbuffers
-#define pglBindRenderbuffer glBindRenderbuffer
-#define pglRenderbufferStorage glRenderbufferStorage
-#define pglFramebufferRenderbuffer glFramebufferRenderbuffer
 #endif
 
 #ifdef __GNUC__
