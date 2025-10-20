@@ -370,8 +370,6 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
 
     scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
     if( scale <= 0.0f ) scale = 1.0f;
-    scale = Q_min( scale, 1.0f );
-    scale = Q_max( scale, 0.25f );
 
     if( rotate > 0 )
     {
@@ -389,22 +387,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     {
         scaledWidth = (int)(gpGlobals->width * scale);
         scaledHeight = (int)(gpGlobals->height * scale);
-
-        pglViewport( 0, 0, scaledWidth, scaledHeight );
-        pglScissor( 0, 0, scaledWidth, scaledHeight );
-
-        pglMatrixMode( GL_PROJECTION );
-        pglLoadIdentity();
-        pglOrtho( 0.0, scaledWidth, scaledHeight, 0.0, -99999.0, 99999.0 );
-        pglMatrixMode( GL_MODELVIEW );
-        pglLoadIdentity();
-    }
-    else
-    {
-        pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
-        pglScissor( 0, 0, gpGlobals->width, gpGlobals->height );
-    }
-
+	}
     return ret;
 }
 
