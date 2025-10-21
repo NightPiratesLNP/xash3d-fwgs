@@ -210,16 +210,12 @@ void R_Set2DMode( qboolean enable )
     if( enable )
     {
         matrix4x4 projection_matrix, worldview_matrix;
-        float scale = 1.0f;
 
         if( glState.in2DMode )
             return;
 
-        scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
-        if( scale <= 0.0f ) scale = 1.0f;
-
-        int virt_w = (int)(gpGlobals->width * scale);
-        int virt_h = (int)(gpGlobals->height * scale);
+        int virt_w = gpGlobals->width;
+        int virt_h = gpGlobals->height;
 
         switch( tr.rotation )
         {
@@ -243,13 +239,11 @@ void R_Set2DMode( qboolean enable )
 
         pglMatrixMode( GL_PROJECTION );
         GL_LoadMatrix( projection_matrix );
-
         pglMatrixMode( GL_MODELVIEW );
         Matrix4x4_LoadIdentity( worldview_matrix );
         GL_LoadMatrix( worldview_matrix );
 
         GL_Cull( GL_NONE );
-
         pglDepthMask( GL_FALSE );
         pglDisable( GL_DEPTH_TEST );
         pglEnable( GL_ALPHA_TEST );
