@@ -207,74 +207,80 @@ R_Set2DMode
 */
 void R_Set2DMode( qboolean enable )
 {
-	if( enable )
-	{
-		matrix4x4 projection_matrix, worldview_matrix;
+    if( enable )
+    {
+        matrix4x4 projection_matrix, worldview_matrix;
+        float scale = 1.0f;
 
-		if( glState.in2DMode )
-			return;
+        if( glState.in2DMode )
+            return;
 
-		// set 2D virtual screen size
-		switch( tr.rotation )
-		{
-		case REF_ROTATE_CW:
-			pglViewport( 0, 0, gpGlobals->height, gpGlobals->width );
-			Matrix4x4_CreateOrtho( projection_matrix, 0, gpGlobals->height, gpGlobals->width, 0, -99999, 99999 );
-			Matrix4x4_ConcatRotate( projection_matrix, 90, 0, 0, 1 );
-			Matrix4x4_ConcatTranslate( projection_matrix, 0, -gpGlobals->height, 0 );
-			break;
-		case REF_ROTATE_CCW:
-			pglViewport( 0, 0, gpGlobals->height, gpGlobals->width );
-			Matrix4x4_CreateOrtho( projection_matrix, 0, gpGlobals->height, gpGlobals->width, 0, -99999, 99999 );
-			Matrix4x4_ConcatRotate( projection_matrix, -90, 0, 0, 1 );
-			Matrix4x4_ConcatTranslate( projection_matrix, -gpGlobals->width, 0, 0 );
-			break;
-		default:
-			pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
-			Matrix4x4_CreateOrtho( projection_matrix, 0, gpGlobals->width, gpGlobals->height, 0, -99999, 99999 );
-			break;
-		}
+        scale = gEngfuncs.pfnGetCvarFloat( "vid_scale" );
+        if( scale <= 0.0f ) scale = 1.0f;
 
-		pglMatrixMode( GL_PROJECTION );
-		GL_LoadMatrix( projection_matrix );
+        int virt_w = (int)(gpGlobals->width * scale);
+        int virt_h = (int)(gpGlobals->height * scale);
 
-		pglMatrixMode( GL_MODELVIEW );
-		Matrix4x4_LoadIdentity( worldview_matrix );
-		GL_LoadMatrix( worldview_matrix );
+        switch( tr.rotation )
+        {
+        case REF_ROTATE_CW:
+            pglViewport( 0, 0, gpGlobals->height, gpGlobals->width );
+            Matrix4x4_CreateOrtho( projection_matrix, 0, virt_h, virt_w, 0, -99999, 99999 );
+            Matrix4x4_ConcatRotate( projection_matrix, 90, 0, 0, 1 );
+            Matrix4x4_ConcatTranslate( projection_matrix, 0, -virt_h, 0 );
+            break;
+        case REF_ROTATE_CCW:
+            pglViewport( 0, 0, gpGlobals->height, gpGlobals->width );
+            Matrix4x4_CreateOrtho( projection_matrix, 0, virt_h, virt_w, 0, -99999, 99999 );
+            Matrix4x4_ConcatRotate( projection_matrix, -90, 0, 0, 1 );
+            Matrix4x4_ConcatTranslate( projection_matrix, -virt_w, 0, 0 );
+            break;
+        default:
+            pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+            Matrix4x4_CreateOrtho( projection_matrix, 0, virt_w, virt_h, 0, -99999, 99999 );
+            break;
+        }
 
-		GL_Cull( GL_NONE );
+        pglMatrixMode( GL_PROJECTION );
+        GL_LoadMatrix( projection_matrix );
 
-		pglDepthMask( GL_FALSE );
-		pglDisable( GL_DEPTH_TEST );
-		pglEnable( GL_ALPHA_TEST );
-		pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+        pglMatrixMode( GL_MODELVIEW );
+        Matrix4x4_LoadIdentity( worldview_matrix );
+        GL_LoadMatrix( worldview_matrix );
 
-		if( glConfig.max_multisamples > 1 && gl_msaa.value )
-			pglDisable( GL_MULTISAMPLE_ARB );
+        GL_Cull( GL_NONE );
 
-		glState.in2DMode = true;
-		RI.currententity = NULL;
-		RI.currentmodel = NULL;
-	}
-	else
-	{
-		pglDepthMask( GL_TRUE );
-		pglEnable( GL_DEPTH_TEST );
-		glState.in2DMode = false;
+        pglDepthMask( GL_FALSE );
+        pglDisable( GL_DEPTH_TEST );
+        pglEnable( GL_ALPHA_TEST );
+        pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
 
-		pglMatrixMode( GL_PROJECTION );
-		GL_LoadMatrix( RI.projectionMatrix );
+        if( glConfig.max_multisamples > 1 && gl_msaa.value )
+            pglDisable( GL_MULTISAMPLE_ARB );
 
-		pglMatrixMode( GL_MODELVIEW );
-		GL_LoadMatrix( RI.worldviewMatrix );
+        glState.in2DMode = true;
+        RI.currententity = NULL;
+        RI.currentmodel = NULL;
+    }
+    else
+    {
+        pglDepthMask( GL_TRUE );
+        pglEnable( GL_DEPTH_TEST );
+        glState.in2DMode = false;
 
-		if( glConfig.max_multisamples > 1 )
-		{
-			if( gl_msaa.value )
-				pglEnable( GL_MULTISAMPLE_ARB );
-			else pglDisable( GL_MULTISAMPLE_ARB );
-		}
+        pglMatrixMode( GL_PROJECTION );
+        GL_LoadMatrix( RI.projectionMatrix );
 
-		GL_Cull( GL_FRONT );
-	}
+        pglMatrixMode( GL_MODELVIEW );
+        GL_LoadMatrix( RI.worldviewMatrix );
+
+        if( glConfig.max_multisamples > 1 )
+        {
+            if( gl_msaa.value )
+                pglEnable( GL_MULTISAMPLE_ARB );
+            else pglDisable( GL_MULTISAMPLE_ARB );
+        }
+
+        GL_Cull( GL_FRONT );
+    }
 }
