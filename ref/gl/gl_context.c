@@ -364,22 +364,32 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 
 static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
-	qboolean ret = true;
-	float scale = gEngfuncs.pfnGetCvarFloat("vid_scale");
-	if (scale <= 0.0f) scale = 1.0f;
+    qboolean ret = true;
+    float scale;
+    int scaledWidth, scaledHeight;
+    scale = scale_x;
 
-	tr.rotation = rotate;
+    tr.rotation = rotate;
 
-	if (offset_x || offset_y)
-	{
-		gEngfuncs.Con_Printf("offset transform not supported\n");
-		ret = false;
-	}
+    if( offset_x || offset_y )
+    {
+        gEngfuncs.Con_Printf("offset transform not supported\n");
+        ret = false;
+    }
 
-	int scaledWidth = (int)(gpGlobals->width * scale);
-	int scaledHeight = (int)(gpGlobals->height * scale);
+    scaledWidth = (int)(gpGlobals->width * scale);
+    scaledHeight = (int)(gpGlobals->height * scale);
 
-	return ret;
+    pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+    pglScissor( 0, 0, gpGlobals->width, gpGlobals->height );
+
+    pglMatrixMode( GL_PROJECTION );
+    pglLoadIdentity();
+    pglOrtho( 0.0, scaledWidth, scaledHeight, 0.0, -99999.0, 99999.0 );
+    pglMatrixMode( GL_MODELVIEW );
+    pglLoadIdentity();
+
+    return ret;
 }
 
 static void GAME_EXPORT VGUI_UploadTextureBlock( int drawX, int drawY, const byte *rgba, int blockWidth, int blockHeight )
