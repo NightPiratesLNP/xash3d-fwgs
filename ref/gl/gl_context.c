@@ -362,14 +362,12 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 		tr.skyboxTextures[i] = skyboxTextures[i];
 }
 
-static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
+static qboolean R_SetDisplayTransform(ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y)
 {
-    qboolean ret = true;
-    float scale;
-    int scaledWidth, scaledHeight;
-    scale = scale_x;
-
-    tr.rotation = rotate;
+	qboolean ret = true;
+	tr.rotation = rotate;
+    tr.scale_x = scale_x;
+    tr.scale_y = scale_y;
 
     if( offset_x || offset_y )
     {
@@ -377,19 +375,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
         ret = false;
     }
 
-    scaledWidth = (int)(gpGlobals->width * scale);
-    scaledHeight = (int)(gpGlobals->height * scale);
-
-    pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
-    pglScissor( 0, 0, gpGlobals->width, gpGlobals->height );
-
-    pglMatrixMode( GL_PROJECTION );
-    pglLoadIdentity();
-    pglOrtho( 0.0, scaledWidth, scaledHeight, 0.0, -99999.0, 99999.0 );
-
-    pglMatrixMode( GL_MODELVIEW );
-    pglLoadIdentity();
-
+    gEngfuncs.Con_Printf("R_SetDisplayTransform: rot=%d scale=(%.2f, %.2f)\n", rotate, scale_x, scale_y);
     return ret;
 }
 
