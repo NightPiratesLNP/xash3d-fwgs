@@ -386,6 +386,7 @@ static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_
     pglMatrixMode( GL_PROJECTION );
     pglLoadIdentity();
     pglOrtho( 0.0, scaledWidth, scaledHeight, 0.0, -99999.0, 99999.0 );
+
     pglMatrixMode( GL_MODELVIEW );
     pglLoadIdentity();
 
