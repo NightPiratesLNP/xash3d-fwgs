@@ -261,9 +261,9 @@ typedef struct
 	uint *lightgammatable;
 	uint *lineargammatable;
 	uint *screengammatable;
-
 	uint max_entities;
-
+	float scale_x;
+	float scale_y;
 	ref_screen_rotation_t rotation;
 } gl_globals_t;
 
