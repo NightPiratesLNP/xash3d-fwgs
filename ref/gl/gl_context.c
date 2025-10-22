@@ -362,21 +362,19 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 		tr.skyboxTextures[i] = skyboxTextures[i];
 }
 
-static qboolean R_SetDisplayTransform(ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y)
+static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
 {
 	qboolean ret = true;
+
 	tr.rotation = rotate;
-    tr.scale_x = scale_x;
-    tr.scale_y = scale_y;
 
-    if( offset_x || offset_y )
-    {
-        gEngfuncs.Con_Printf("offset transform not supported\n");
-        ret = false;
-    }
+	if( offset_x || offset_y )
+	{
+		gEngfuncs.Con_Printf("offset transform not supported\n");
+		ret = false;
+	}
 
-    gEngfuncs.Con_Printf("R_SetDisplayTransform: rot=%d scale=(%.2f, %.2f)\n", rotate, scale_x, scale_y);
-    return ret;
+	return ret;
 }
 
 static void GAME_EXPORT VGUI_UploadTextureBlock( int drawX, int drawY, const byte *rgba, int blockWidth, int blockHeight )
