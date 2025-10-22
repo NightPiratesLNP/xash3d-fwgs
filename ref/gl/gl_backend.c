@@ -51,7 +51,7 @@ void GL_BackendStartFrame(void)
 {
 	r_speeds_msg[0] = '\0';
 
-	float resScale = Q_max(vid_res->value, 0.1f); // Minimum 0.1
+	float resScale = Q_max(vid_scale->value, 0.1f); // Minimum 0.1
 	int scaledWidth = (int)(gpGlobals->width * resScale);
 	int scaledHeight = (int)(gpGlobals->height * resScale);
 
