@@ -47,22 +47,9 @@ qboolean R_SpeedsMessage( char *out, size_t size )
 GL_BackendStartFrame
 ==============
 */
-void GL_BackendStartFrame(void)
+void GL_BackendStartFrame( void )
 {
 	r_speeds_msg[0] = '\0';
-
-	float resScale = gEngfuncs.pfnGetCvarFloat("vid_scale");
-	int scaledWidth = (int)(gpGlobals->width * resScale);
-	int scaledHeight = (int)(gpGlobals->height * resScale);
-
-	pglViewport(0, 0, scaledWidth, scaledHeight);
-	pglScissor(0, 0, scaledWidth, scaledHeight);
-
-	GL_LoadIdentityTexMatrix();
-	pglMatrixMode(GL_PROJECTION);
-	pglLoadIdentity();
-	pglOrtho(0, scaledWidth, scaledHeight, 0, -99999, 99999);
-	pglMatrixMode(GL_MODELVIEW);
 }
 
 /*
