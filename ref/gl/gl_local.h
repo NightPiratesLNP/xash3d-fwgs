@@ -261,9 +261,9 @@ typedef struct
 	uint *lightgammatable;
 	uint *lineargammatable;
 	uint *screengammatable;
+
 	uint max_entities;
-	float scale_x;
-	float scale_y;
+
 	ref_screen_rotation_t rotation;
 } gl_globals_t;
 
@@ -791,7 +791,7 @@ extern convar_t	gl_msaa;
 extern convar_t	gl_stencilbits;
 extern convar_t	gl_overbright;
 extern convar_t gl_fog;
-extern convar_t vid_scale;
+
 extern convar_t	r_lighting_extended;
 extern convar_t	r_lighting_ambient;
 extern convar_t	r_studio_lambert;
