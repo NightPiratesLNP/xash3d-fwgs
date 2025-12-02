@@ -265,6 +265,13 @@ typedef struct
 	uint max_entities;
 
 	ref_screen_rotation_t rotation;
+
+	// internal scaled render target (for low internal resolution + upscale)
+	GLuint		internal_fbo;
+	GLuint		internal_tex;
+	int		internal_w;
+	int		internal_h;
+	qboolean	internal_enabled;
 } gl_globals_t;
 
 typedef struct
