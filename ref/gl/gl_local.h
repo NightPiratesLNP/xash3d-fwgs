@@ -53,6 +53,16 @@ void VGL_ShimEndFrame( void );
 #endif
 #endif
 
+#ifndef GL_FRAMEBUFFER
+#define GL_FRAMEBUFFER           0x8D40
+#endif
+#ifndef GL_COLOR_ATTACHMENT0
+#define GL_COLOR_ATTACHMENT0     0x8CE0
+#endif
+#ifndef GL_FRAMEBUFFER_COMPLETE
+#define GL_FRAMEBUFFER_COMPLETE  0x8CD5
+#endif
+
 #define Assert(x) if(!( x )) gEngfuncs.Host_Error( "assert failed at %s:%i\n", __FILE__, __LINE__ )
 
 #include <stdio.h>
@@ -60,7 +70,7 @@ void VGL_ShimEndFrame( void );
 // make mod_ref.h?
 #define LM_SAMPLE_SIZE             16
 
-
+extern convar_t gl_renderscale;
 extern poolhandle_t r_temppool;
 
 #define BLOCK_SIZE		tr.block_size	// lightmap blocksize
