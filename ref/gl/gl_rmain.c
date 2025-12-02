@@ -26,6 +26,90 @@ GNU General Public License for more details.
 float		gldepthmin, gldepthmax;
 ref_instance_t	RI;
 
+#if XASH_ANDROID
+static void R_DestroyInternalRT( void )
+{
+	if( tr.internal_tex )
+	{
+		pglDeleteTextures( 1, &tr.internal_tex );
+		tr.internal_tex = 0;
+	}
+	if( tr.internal_fbo )
+	{
+		pglDeleteFramebuffers( 1, &tr.internal_fbo );
+		tr.internal_fbo = 0;
+	}
+	tr.internal_w = tr.internal_h = 0;
+	tr.internal_enabled = false;
+}
+
+static qboolean R_UpdateInternalRT( void )
+{
+	int w = gpGlobals->width;
+	int h = gpGlobals->height;
+	float scale = gl_renderscale.value;
+
+	if( scale <= 1.0f )
+	{
+		R_DestroyInternalRT();
+		return false;
+	}
+
+	if( w <= 0 || h <= 0 )
+		return false;
+
+	int iw = (int)( w / scale );
+	int ih = (int)( h / scale );
+
+	if( iw < 320 ) iw = 320;
+	if( ih < 240 ) ih = 240;
+
+	if( tr.internal_fbo && tr.internal_w == iw && tr.internal_h == ih )
+	{
+		tr.internal_enabled = true;
+		return true;
+	}
+
+	// recreate
+	R_DestroyInternalRT();
+
+	GLuint tex = 0, fbo = 0;
+
+	pglGenTextures( 1, &tex );
+	pglBindTexture( GL_TEXTURE_2D, tex );
+	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	pglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	pglTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+
+	pglGenFramebuffers( 1, &fbo );
+	pglBindFramebuffer( GL_FRAMEBUFFER, fbo );
+	pglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0 );
+
+	if( pglCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+	{
+		pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		if( tex ) pglDeleteTextures( 1, &tex );
+		if( fbo ) pglDeleteFramebuffers( 1, &fbo );
+		return false;
+	}
+
+	pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	tr.internal_tex = tex;
+	tr.internal_fbo = fbo;
+	tr.internal_w = iw;
+	tr.internal_h = ih;
+	tr.internal_enabled = true;
+
+	return true;
+}
+#else
+static qboolean R_UpdateInternalRT( void ) { return false; }
+static void R_DestroyInternalRT( void ) { }
+#endif
+
 static int R_RankForRenderMode( int rendermode )
 {
 	switch( rendermode )
@@ -993,6 +1077,19 @@ void R_RenderScene( void )
 
 	R_PushDlights();
 
+	qboolean use_internal = R_UpdateInternalRT();
+
+	if( use_internal )
+	{
+		pglBindFramebuffer( GL_FRAMEBUFFER, tr.internal_fbo );
+		pglViewport( 0, 0, tr.internal_w, tr.internal_h );
+	}
+	else
+	{
+		pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+	}
+
 	R_SetupFrustum();
 	R_SetupFrame();
 	R_SetupGL( true );
@@ -1014,6 +1111,26 @@ void R_RenderScene( void )
 	R_DrawWaterSurfaces();
 
 	R_EndGL();
+
+	if( use_internal && tr.internal_tex && tr.internal_fbo )
+	{
+		// Blit low-resolution render target to full-resolution backbuffer
+		pglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		pglViewport( 0, 0, gpGlobals->width, gpGlobals->height );
+
+		R_Set2DMode( true );
+		GL_Bind( XASH_TEXTURE0, tr.internal_tex );
+		pglDisable( GL_DEPTH_TEST );
+		pglDisable( GL_BLEND );
+		pglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+		pglBegin( GL_QUADS );
+			pglTexCoord2f( 0.0f, 0.0f ); pglVertex2f( 0.0f, 0.0f );
+			pglTexCoord2f( 1.0f, 0.0f ); pglVertex2f( gpGlobals->width, 0.0f );
+			pglTexCoord2f( 1.0f, 1.0f ); pglVertex2f( gpGlobals->width, gpGlobals->height );
+			pglTexCoord2f( 0.0f, 1.0f ); pglVertex2f( 0.0f, gpGlobals->height );
+		pglEnd();
+	}
 }
 
 void R_GammaChanged( qboolean do_reset_gamma )
