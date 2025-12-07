@@ -1857,11 +1857,7 @@ APIENTRY_LINKAGE void GL_FUNCTION( glTexImage2DMultisample )(GLenum target, GLsi
 #endif
 
 #if !defined(PGL_CHECKFRAMEBUFFERSTATUS_FALLBACK)
-#ifndef GL_FRAMEBUFFER_COMPLETE
-#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
-#endif
-
-APIENTRY_LINKAGE GLint pglCheckFramebufferStatus(GLenum target)
+APIENTRY_LINKAGE GLenum pglCheckFramebufferStatus(GLenum target)
 {
 #ifdef glCheckFramebufferStatus
     return glCheckFramebufferStatus(target);
@@ -1869,7 +1865,7 @@ APIENTRY_LINKAGE GLint pglCheckFramebufferStatus(GLenum target)
     return glCheckFramebufferStatusOES(target);
 #else
     (void)target;
-    return GL_FRAMEBUFFER_COMPLETE;
+    return (GLenum)0x8CD5;
 #endif
 }
 
