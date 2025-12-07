@@ -463,8 +463,9 @@ static qboolean VID_SetScreenResolution( int width, int height, window_mode_t wi
 	else if( window_mode == WINDOW_MODE_FULLSCREEN )
 	{
 		SDL_DisplayMode want = { 0 };
-		want.w = width;
-		want.h = height;
+		// Apply scaling to the desired resolution
+		want.w = width * vid_scale.value;
+		want.h = height * vid_scale.value;
 
 		if( SDL_GetClosestDisplayMode( 0, &want, &got ) == NULL )
 		{
@@ -991,8 +992,9 @@ rserr_t R_ChangeDisplaySettings( int width, int height, window_mode_t window_mod
 	refState.desktopBitsPixel = SDL_BITSPERPIXEL( displayMode.format );
 	if( window_mode == WINDOW_MODE_BORDERLESS )
 	{
-		width = displayMode.w;
-		height = displayMode.h;
+		// Apply scaling to the display mode
+		width = displayMode.w * vid_scale.value;
+		height = displayMode.h * vid_scale.value;
 	}
 
 	refState.fullScreen = window_mode != WINDOW_MODE_WINDOWED;
