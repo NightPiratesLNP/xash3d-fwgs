@@ -1856,21 +1856,6 @@ APIENTRY_LINKAGE void GL_FUNCTION( glTexImage2DMultisample )(GLenum target, GLsi
 #define pglSwapInterval glSwapInterval
 #endif
 
-#if !defined(PGL_CHECKFRAMEBUFFERSTATUS_FALLBACK) && !defined(pglCheckFramebufferStatus)
-static inline APIENTRY GLenum pglCheckFramebufferStatus(GLenum target)
-{
-#ifdef glCheckFramebufferStatus
-    return glCheckFramebufferStatus(target);
-#elif defined(glCheckFramebufferStatusOES)
-    return glCheckFramebufferStatusOES(target);
-#else
-    (void)target;
-    return (GLenum)0x8CD5;
-#endif
-}
-#define PGL_CHECKFRAMEBUFFERSTATUS_FALLBACK 1
-#endif
-
 #ifdef __GNUC__
 	#pragma GCC diagnostic pop
 #endif
