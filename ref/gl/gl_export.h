@@ -1870,6 +1870,26 @@ static inline GLint pglCheckFramebufferStatus(GLenum target)
 }
 #endif
 
+#if !defined(PGL_CHECKFRAMEBUFFERSTATUS_FALLBACK)
+#ifndef GL_FRAMEBUFFER_COMPLETE
+#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
+#endif
+
+APIENTRY_LINKAGE GLint pglCheckFramebufferStatus(GLenum target)
+{
+#ifdef glCheckFramebufferStatus
+    return glCheckFramebufferStatus(target);
+#elif defined(glCheckFramebufferStatusOES)
+    return glCheckFramebufferStatusOES(target);
+#else
+    (void)target;
+    return GL_FRAMEBUFFER_COMPLETE;
+#endif
+}
+
+#define PGL_CHECKFRAMEBUFFERSTATUS_FALLBACK 1
+#endif
+
 #ifdef __GNUC__
 	#pragma GCC diagnostic pop
 #endif
