@@ -27,6 +27,8 @@ typedef struct
 
 extern glwstate_t glw_state;
 
+extern cvar_t vid_scale;  // External declaration for resolution scaling
+
 #define VID_MIN_HEIGHT 200
 #define VID_MIN_WIDTH  320
 
