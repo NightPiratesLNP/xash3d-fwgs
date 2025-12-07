@@ -1857,7 +1857,7 @@ APIENTRY_LINKAGE void GL_FUNCTION( glTexImage2DMultisample )(GLenum target, GLsi
 #endif
 
 #if !defined(PGL_CHECKFRAMEBUFFERSTATUS_FALLBACK)
-APIENTRY_LINKAGE GLenum pglCheckFramebufferStatus(GLenum target)
+static inline APIENTRY GLenum pglCheckFramebufferStatus(GLenum target) // <--- 'static inline' eklendi
 {
 #ifdef glCheckFramebufferStatus
     return glCheckFramebufferStatus(target);
