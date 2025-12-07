@@ -57,7 +57,11 @@ qboolean SW_CreateBuffer( int width, int height, uint *stride, uint *bpp, uint *
 	if( sw.renderer )
 	{
 		unsigned int format = SDL_GetWindowPixelFormat( host.hWnd );
-		SDL_RenderSetLogicalSize( sw.renderer, refState.width, refState.height );
+		// Set logical size to match the scaled resolution
+		int scaled_w = refState.width * vid_scale.value;
+		int scaled_h = refState.height * vid_scale.value;
+		SDL_RenderSetLogicalSize( sw.renderer, scaled_w, scaled_h );
+		SDL_RenderSetIntegerScale( sw.renderer, SDL_FALSE ); // Disable integer scaling to allow smooth scaling
 
 		if( sw.tex )
 		{
@@ -426,7 +430,13 @@ void VID_SaveWindowSize( int width, int height, qboolean maximized )
 	if( !glw_state.software )
 		SDL_GL_GetDrawableSize( host.hWnd, &render_w, &render_h );
 	else
-		SDL_RenderSetLogicalSize( sw.renderer, width, height );
+	{
+		// Apply scaling to the render target size
+		render_w = width * vid_scale.value;
+		render_h = height * vid_scale.value;
+		SDL_RenderSetLogicalSize( sw.renderer, render_w, render_h );
+		SDL_RenderSetIntegerScale( sw.renderer, SDL_FALSE );
+	}
 
 	VID_SetDisplayTransform( &render_w, &render_h );
 	R_SaveVideoMode( width, height, render_w, render_h, maximized );

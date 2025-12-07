@@ -33,10 +33,11 @@ qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int 
 		ret = false;
 	}
 
-	if( scale_x != 1.0f || scale_y != 1.0f )
+	// Scale is now supported in software renderer
+	// The actual scaling is handled by SDL's renderer
+	if( scale_x <= 0.0f || scale_y <= 0.0f )
 	{
-		// maybe implement 2x2?
-		gEngfuncs.Con_Printf( "scale transform not supported\n" );
+		gEngfuncs.Con_Printf( "invalid scale factor\n" );
 		ret = false;
 	}
 
