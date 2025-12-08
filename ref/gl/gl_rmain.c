@@ -26,6 +26,28 @@ GNU General Public License for more details.
 float		gldepthmin, gldepthmax;
 ref_instance_t	RI;
 
+//---------------------------------------------------------------------------
+// Internal render scaling helpers (FBO-based upscale, WIP)
+//---------------------------------------------------------------------------
+
+void R_ReleaseScaleTarget( void )
+{
+	tr.scaleEnabled   = false;
+	tr.internalWidth  = 0;
+	tr.internalHeight = 0;
+	tr.scaleFbo       = 0;
+	tr.scaleColorTex  = 0;
+}
+
+void R_UpdateScaleTarget( int render_w, int render_h )
+{
+	// For now just remember requested internal size; GL objects will be
+	// created and used in a later step.
+	tr.internalWidth  = render_w;
+	tr.internalHeight = render_h;
+	tr.scaleEnabled   = false;
+}
+
 static int R_RankForRenderMode( int rendermode )
 {
 	switch( rendermode )
