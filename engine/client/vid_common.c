@@ -190,6 +190,48 @@ static void VID_Mode_f( void )
 	R_ChangeDisplaySettings( w, h, bound( 0, vid_fullscreen.value, WINDOW_MODE_COUNT - 1 ));
 }
 
+/*
+==================
+R_Res_f
+
+set internal render resolution without changing window size
+usage: r_res <render_width> <render_height>
+==================
+*/
+static void R_Res_f( void )
+{
+	int render_w, render_h;
+	int win_w, win_h;
+	int argc = Cmd_Argc();
+
+	if( argc != 3 )
+	{
+		Con_Printf( S_USAGE "r_res <render_width> <render_height>\n" );
+		return;
+	}
+
+	render_w = Q_atoi( Cmd_Argv( 1 ));
+	render_h = Q_atoi( Cmd_Argv( 2 ));
+
+	if( render_w <= 0 || render_h <= 0 )
+	{
+		Con_Printf( S_ERROR "invalid render resolution\n" );
+		return;
+	}
+
+	/* keep current window size, only change internal render size */
+	win_w = Cvar_VariableInteger( "width" );
+	win_h = Cvar_VariableInteger( "height" );
+	if( win_w <= 0 || win_h <= 0 )
+	{
+		/* fallback to requested render size if window size is unknown */
+		win_w = render_w;
+		win_h = render_h;
+	}
+
+	R_SaveVideoMode( win_w, win_h, render_w, render_h, vid_maximized.value != 0.0f );
+}
+
 void VID_Init( void )
 {
 	// system screen width and height (don't suppose for change from console at all)
@@ -207,6 +249,7 @@ void VID_Init( void )
 	// a1ba: planned to be named vid_mode for compability
 	// but supported mode list is filled by backends, so numbers are not portable any more
 	Cmd_AddRestrictedCommand( "vid_setmode", VID_Mode_f, "display video mode" );
+	Cmd_AddRestrictedCommand( "r_res", R_Res_f, "set internal render resolution" );
 
 	V_Init(); // init gamma
 	R_Init(); // init renderer
