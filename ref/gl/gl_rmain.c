@@ -551,17 +551,30 @@ void R_SetupGL( qboolean set_gl_state )
 
 	if( RP_NORMALPASS( ))
 	{
-		int x, x2, y, y2;
+		int win_w = gpGlobals->width;
+		int win_h = gpGlobals->height;
+		int vp_x = RI.viewport[0];
+		int vp_y = RI.viewport[1];
+		int vp_w = RI.viewport[2];
+		int vp_h = RI.viewport[3];
+		int x, y, x2, y2;
 
-		// set up viewport (main, playersetup)
-		x = floor( RI.viewport[0] * gpGlobals->width / gpGlobals->width );
-		x2 = ceil(( RI.viewport[0] + RI.viewport[2] ) * gpGlobals->width / gpGlobals->width );
-		y = floor( gpGlobals->height - RI.viewport[1] * gpGlobals->height / gpGlobals->height );
-		y2 = ceil( gpGlobals->height - ( RI.viewport[1] + RI.viewport[3] ) * gpGlobals->height / gpGlobals->height );
+		// If the viewport is smaller than the window (e.g. from r_res), center it
+		if( vp_w < win_w )
+			vp_x = ( win_w - vp_w ) / 2;
+		if( vp_h < win_h )
+			vp_y = ( win_h - vp_h ) / 2;
+
+		// convert to GL bottom-left based coordinates
+		x  = vp_x;
+		y  = win_h - ( vp_y + vp_h );
+		x2 = vp_x + vp_w;
+		y2 = win_h - vp_y;
 
 		if( tr.rotation & 1 )
 			pglViewport( y2, x, y - y2, x2 - x );
-		else pglViewport( x, y2, x2 - x, y - y2 );
+		else
+			pglViewport( x, y2, x2 - x, y - y2 );
 	}
 	else
 	{
