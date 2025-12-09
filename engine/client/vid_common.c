@@ -22,7 +22,7 @@ GNU General Public License for more details.
 
 static CVAR_DEFINE_AUTO( vid_mode, "0", FCVAR_RENDERINFO, "current video mode index (used only for storage)" );
 static CVAR_DEFINE_AUTO( vid_rotate, "0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "screen rotation (0-3)" );
-CVAR_DEFINE( vid_scale, "vid_scale", "1.0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "pixel scale" );
+static CVAR_DEFINE_AUTO( vid_scale, "1.0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "pixel scale" );
 
 CVAR_DEFINE_AUTO( vid_maximized, "0", FCVAR_RENDERINFO, "window maximized state, read-only" );
 CVAR_DEFINE( vid_fullscreen, "fullscreen", DEFAULT_FULLSCREEN, FCVAR_RENDERINFO|FCVAR_VIDRESTART, "fullscreen state (0 windowed, 1 fullscreen, 2 borderless)" );
@@ -30,6 +30,8 @@ CVAR_DEFINE( window_width, "width", "0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "scr
 CVAR_DEFINE( window_height, "height", "0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "screen height" );
 CVAR_DEFINE( window_xpos, "_window_xpos", "-1", FCVAR_RENDERINFO, "window position by horizontal" );
 CVAR_DEFINE( window_ypos, "_window_ypos", "-1", FCVAR_RENDERINFO, "window position by vertical" );
+CVAR_DEFINE( vid_width, "vid_width", "0", FCVAR_READ_ONLY, "actual window viewport size" );
+CVAR_DEFINE( vid_height, "vid_height", "0", FCVAR_READ_ONLY, "actual window viewport size" );
 
 glwstate_t	glw_state;
 
@@ -40,6 +42,8 @@ R_SaveVideoMode
 */
 void R_SaveVideoMode( int w, int h, int render_w, int render_h, qboolean maximized )
 {
+	string temp;
+
 	if( !w || !h || !render_w || !render_h )
 	{
 		host.renderinfo_changed = false;
@@ -49,8 +53,18 @@ void R_SaveVideoMode( int w, int h, int render_w, int render_h, qboolean maximiz
 	host.window_center_x = w / 2;
 	host.window_center_y = h / 2;
 
-	Cvar_SetValue( "width", w );
-	Cvar_SetValue( "height", h );
+	Q_snprintf( temp, sizeof( temp ), "%d", w );
+	Cvar_DirectSet( &window_width, temp );
+
+	Q_snprintf( temp, sizeof( temp ), "%d", h );
+	Cvar_DirectSet( &window_height, temp );
+
+	Q_snprintf( temp, sizeof( temp ), "%d", render_w );
+	Cvar_FullSet( "vid_width", temp, vid_width.flags );
+
+	Q_snprintf( temp, sizeof( temp ), "%d", render_h );
+	Cvar_FullSet( "vid_height", temp, vid_width.flags  );
+
 	Cvar_DirectSet( &vid_maximized, maximized ? "1" : "0" );
 	
 	// immediately drop changed state or we may trigger
@@ -60,13 +74,14 @@ void R_SaveVideoMode( int w, int h, int render_w, int render_h, qboolean maximiz
 	if( refState.width == render_w && refState.height == render_h )
 		return;
 
+	refState.scale_x = (float)render_w / w;
+	refState.scale_y = (float)render_h / h;
+
 	refState.width = render_w;
 	refState.height = render_h;
 
 	// check for 4:3 or 5:4
-	if( render_w * 3 != render_h * 4 && render_w * 4 != render_h * 5 )
-		refState.wideScreen = true;
-	else refState.wideScreen = false;
+	refState.wideScreen = render_w * 3 != render_h * 4 && render_w * 4 != render_h * 5;
 
 	SCR_VidInit(); // tell client.dll that vid_mode has changed
 }
@@ -142,8 +157,8 @@ void VID_SetDisplayTransform( int *render_w, int *render_h )
 			*render_h = swap;
 		}
 
-		//*render_h /= vid_scale.value;
-		//*render_w /= vid_scale.value;
+		*render_h /= vid_scale.value;
+		*render_w /= vid_scale.value;
 
 		ref.rotation = rotate;
 	}
@@ -190,48 +205,6 @@ static void VID_Mode_f( void )
 	R_ChangeDisplaySettings( w, h, bound( 0, vid_fullscreen.value, WINDOW_MODE_COUNT - 1 ));
 }
 
-/*
-==================
-R_Res_f
-
-set internal render resolution without changing window size
-usage: r_res <render_width> <render_height>
-==================
-*/
-static void R_Res_f( void )
-{
-	int render_w, render_h;
-	int win_w, win_h;
-	int argc = Cmd_Argc();
-
-	if( argc != 3 )
-	{
-		Con_Printf( S_USAGE "r_res <render_width> <render_height>\n" );
-		return;
-	}
-
-	render_w = Q_atoi( Cmd_Argv( 1 ));
-	render_h = Q_atoi( Cmd_Argv( 2 ));
-
-	if( render_w <= 0 || render_h <= 0 )
-	{
-		Con_Printf( S_ERROR "invalid render resolution\n" );
-		return;
-	}
-
-	/* keep current window size, only change internal render size */
-	win_w = Cvar_VariableInteger( "width" );
-	win_h = Cvar_VariableInteger( "height" );
-	if( win_w <= 0 || win_h <= 0 )
-	{
-		/* fallback to requested render size if window size is unknown */
-		win_w = render_w;
-		win_h = render_h;
-	}
-
-	R_SaveVideoMode( win_w, win_h, render_w, render_h, vid_maximized.value != 0.0f );
-}
-
 void VID_Init( void )
 {
 	// system screen width and height (don't suppose for change from console at all)
@@ -243,13 +216,14 @@ void VID_Init( void )
 	Cvar_RegisterVariable( &vid_scale );
 	Cvar_RegisterVariable( &vid_fullscreen );
 	Cvar_RegisterVariable( &vid_maximized );
+	Cvar_RegisterVariable( &vid_width );
+	Cvar_RegisterVariable( &vid_height );
 	Cvar_RegisterVariable( &window_xpos );
 	Cvar_RegisterVariable( &window_ypos );
 
 	// a1ba: planned to be named vid_mode for compability
 	// but supported mode list is filled by backends, so numbers are not portable any more
 	Cmd_AddRestrictedCommand( "vid_setmode", VID_Mode_f, "display video mode" );
-	Cmd_AddRestrictedCommand( "r_res", R_Res_f, "set internal render resolution" );
 
 	V_Init(); // init gamma
 	R_Init(); // init renderer

@@ -25,8 +25,6 @@ GNU General Public License for more details.
 #define EVENT_CLIENT	5000	// less than this value it's a server-side studio events
 #define MAX_LOCALLIGHTS	4
 
-extern convar_t cl_seebehindwall;
-
 typedef struct
 {
 	char		name[MAX_OSPATH];
@@ -34,7 +32,7 @@ typedef struct
 	model_t		*model;
 } player_model_t;
 
-CVAR_DEFINE_AUTO( cl_seebehindwall, "0", FCVAR_PROTECTED, "see through walls" );
+// never gonna change, just shut up const warning
 CVAR_DEFINE_AUTO( r_shadows, "0", 0, "draw ugly shadows" );
 
 static const vec3_t hullcolor[8] =
@@ -2880,23 +2878,6 @@ static void R_StudioSetupRenderer( int rendermode )
 
 		for( i = 0; i < phdr->numbones; i++ )
 			Matrix3x4_ConcatTransforms( g_studio.worldtransform[i], g_studio.bonestransform[i], boneinfo[i].poseToBone );
-	}
-
-	if ( cl_seebehindwall.value == 1 ) 
-	{
-		pglDisable( GL_TRIANGLES );
-		pglDisable( GL_DEPTH_TEST );
-		pglDepthRange( 0.0, 0.5 );
-	}
-	else if ( cl_seebehindwall.value == 2 ) 
-	{
-		pglEnable( GL_TRIANGLES );
-		pglEnable( GL_DEPTH_TEST );
-		pglDepthRange( 0.0, 0.5 );
-	}
-	else if( !pglIsEnabled( GL_DEPTH_TEST ) ) 
-	{
-		pglEnable( GL_DEPTH_TEST );
 	}
 }
 

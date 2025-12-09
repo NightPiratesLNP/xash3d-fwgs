@@ -27,14 +27,6 @@ public class XashActivity extends SDLActivity {
     private static final String TAG = "XashActivity";
     private SharedPreferences mPreferences;
 
-    public static float mScale = 0.0f;
-    public static float mTouchScaleX = 1.0f;
-    public static float mTouchScaleY = 1.0f;
-    public static int mForceHeight = 0;
-    public static int mForceWidth = 0;
-    public static int mMinHeight = 240;
-    public static int mMinWidth = 320;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,24 +39,6 @@ public class XashActivity extends SDLActivity {
         }
 
         AndroidBug5497Workaround.assistActivity(this);
-
-        boolean resolutionFixed = mPreferences.getBoolean("resolution_fixed", false);
-        boolean resolutionCustom = mPreferences.getBoolean("resolution_custom", false);
-        if (resolutionFixed) {
-            if (resolutionCustom) {
-                mForceWidth = mPreferences.getInt("resolution_width", 0);
-                mForceHeight = mPreferences.getInt("resolution_height", 0);
-                if (mForceWidth < mMinWidth || mForceHeight < mMinHeight) {
-                    mForceWidth = 0;
-                    mForceHeight = 0;
-                }
-            } else {
-                mScale = mPreferences.getFloat("resolution_scale", 0.0f);
-                if (mScale < 0.5f) {
-                    mScale = 0.0f;
-                }
-            }
-        }
     }
 
     @Override
@@ -234,41 +208,5 @@ public class XashActivity extends SDLActivity {
 
         Log.d(TAG, "Final argv: " + argv);
         return argv.split(" ");
-    }
-
-    @Override
-    protected SDLActivity.SDLSurface createSDLSurface(android.content.Context context) {
-        return new XashSDLSurface(context);
-    }
-
-    public static class XashSDLSurface extends SDLActivity.SDLSurface {
-        private boolean resizing = false;
-
-        public XashSDLSurface(android.content.Context context) {
-            super(context);
-        }
-
-        @Override
-        public void surfaceChanged(android.view.SurfaceHolder holder, int format, int width, int height) {
-            if (!resizing && ((mForceHeight != 0 && mForceWidth != 0) || mScale != 0.0f)) {
-                int newWidth;
-                int newHeight;
-                resizing = true;
-                if (mForceHeight != 0 && mForceWidth != 0) {
-                    newWidth = mForceWidth;
-                    newHeight = mForceHeight;
-                } else {
-                    newWidth = (int) (getWidth() / mScale);
-                    newHeight = (int) (getHeight() / mScale);
-                }
-                holder.setFixedSize(newWidth, newHeight);
-                mTouchScaleX = (float) newWidth / (float) getWidth();
-                mTouchScaleY = (float) newHeight / (float) getHeight();
-                return;
-            }
-
-            super.surfaceChanged(holder, format, width, height);
-            resizing = false;
-        }
     }
 }

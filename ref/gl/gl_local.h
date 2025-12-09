@@ -265,13 +265,6 @@ typedef struct
 	uint max_entities;
 
 	ref_screen_rotation_t rotation;
-
-	// internal render scaling (for FBO-based upscale)
-	int		internalWidth;
-	int		internalHeight;
-	GLuint		scaleFbo;
-	GLuint		scaleColorTex;
-	qboolean	scaleEnabled;
 } gl_globals_t;
 
 typedef struct
@@ -554,10 +547,6 @@ byte *Mod_GetCurrentVis( void );
 void Mod_SetOrthoBounds( const float *mins, const float *maxs );
 void R_NewMap( void );
 void CL_AddCustomBeam( cl_entity_t *pEnvBeam );
-
-// internal render scaling helpers (FBO-based upscale path)
-void R_UpdateScaleTarget( int render_w, int render_h );
-void R_ReleaseScaleTarget( void );
 
 //
 // gl_opengl.c
