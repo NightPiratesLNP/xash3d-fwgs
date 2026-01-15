@@ -313,7 +313,7 @@ static screenfade_t *pfnRefGetScreenFade( void )
 	return &clgame.fade;
 }
 
-static qboolean R_Init_Video_( const int type )
+static qboolean R_Init_Video_( ref_graphic_apis_t type )
 {
 	host.apply_opengl_config = true;
 	Cbuf_AddTextf( "exec %s.cfg\n", ref.dllFuncs.R_GetConfigName());
@@ -640,11 +640,11 @@ static void SetWidthAndHeightFromCommandLine( void )
 static void SetFullscreenModeFromCommandLine( void )
 {
 	if( Sys_CheckParm( "-borderless" ))
-		Cvar_DirectSet( &vid_fullscreen, "2" );
+		Cvar_DirectSetValue( &vid_fullscreen, WINDOW_MODE_BORDERLESS );
 	else if( Sys_CheckParm( "-fullscreen" ))
-		Cvar_DirectSet( &vid_fullscreen, "1" );
+		Cvar_DirectSetValue( &vid_fullscreen, WINDOW_MODE_FULLSCREEN );
 	else if( Sys_CheckParm( "-windowed" ))
-		Cvar_DirectSet( &vid_fullscreen, "0" );
+		Cvar_DirectSetValue( &vid_fullscreen, WINDOW_MODE_WINDOWED );
 }
 
 static void R_CollectRendererNames( void )
