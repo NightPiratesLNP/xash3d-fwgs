@@ -537,7 +537,7 @@ typedef enum sndFlags_e
 typedef struct wavdata_s
 {
 	size_t  size;      // for bounds checking
-	uint    loopStart; // offset at this point sound will be looping while playing more than only once
+	uint    loop_start; // offset at this point sound will be looping while playing more than only once
 	uint    samples;   // total samplecount in wav
 	uint    type;      // compression type
 	uint    flags;     // misc sound flags
@@ -628,7 +628,6 @@ qboolean SV_Active( void );
 
 ==============================================================
 */
-char *COM_MemFgets( byte *pMemFile, int fileSize, int *filePos, char *pBuffer, int bufferSize );
 void COM_HexConvert( const char *pszInput, int nInputLength, byte *pOutput );
 byte COM_Nibble( char c );
 int COM_SaveFile( const char *filename, const void *data, int len );
@@ -638,8 +637,6 @@ cvar_t *pfnCVarGetPointer( const char *szVarName );
 int pfnDrawConsoleString( int x, int y, char *string );
 void pfnDrawSetTextColor( float r, float g, float b );
 void pfnDrawConsoleStringLen( const char *pText, int *length, int *height );
-void *Cache_Check( poolhandle_t mempool, struct cache_user_s *c );
-void COM_TrimSpace( const char *source, char *dest );
 void pfnGetModelBounds( model_t *mod, float *mins, float *maxs );
 int COM_CheckParm( char *parm, char **ppnext );
 int pfnGetModelType( model_t *mod );

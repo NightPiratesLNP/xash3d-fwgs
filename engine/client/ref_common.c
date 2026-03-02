@@ -111,7 +111,7 @@ void R_SetupSky( const char *name )
 	int i, len;
 	qboolean result;
 
-	if( !COM_CheckString( name ))
+	if( COM_StringEmptyOrNULL( name ))
 	{
 		ref.dllFuncs.R_SetupSky( NULL ); // unload skybox
 		return;
@@ -227,14 +227,15 @@ static model_t *pfnGetDefaultSprite( enum ref_defaultsprite_e spr )
 
 static void *pfnMod_Extradata( int type, model_t *m )
 {
-	switch( type )
+	if( type == mod_alias || type == mod_studio )
 	{
-	case mod_alias: return Mod_AliasExtradata( m );
-	case mod_studio: return Mod_StudioExtradata( m );
-	case mod_sprite: // fallthrough
-	case mod_brush: return NULL;
-	default: Host_Error( "%s: unknown type %d\n", __func__, type );
+		if( m && m->type == type )
+			return m->cache.data;
+		return NULL;
 	}
+	else if( type != mod_sprite && type != mod_brush )
+		Host_Error( "%s: unknown type %d\n", __func__, type );
+
 	return NULL;
 }
 
@@ -339,7 +340,7 @@ static const ref_api_t gEngfuncs =
 	pfnEngineGetParm,
 
 	pfnCvar_Get,
-	(void*)Cvar_FindVarExt,
+	(void*)Cvar_FindVar,
 	Cvar_VariableValue,
 	Cvar_VariableString,
 	Cvar_SetValue,
@@ -766,7 +767,7 @@ qboolean R_Init( void )
 	if( Sys_GetParmFromCmdLine( "-ref", requested_cmdline ))
 		success = R_LoadRenderer( requested_cmdline, false );
 
-	if( !success && COM_CheckString( r_refdll.string ) && Q_stricmp( requested_cmdline, r_refdll.string ))
+	if( !success && !COM_StringEmptyOrNULL( r_refdll.string ) && Q_stricmp( requested_cmdline, r_refdll.string ))
 	{
 		Q_strncpy( requested_cvar, r_refdll.string, sizeof( requested_cvar ));
 

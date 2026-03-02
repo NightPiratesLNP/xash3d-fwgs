@@ -23,18 +23,17 @@ GNU General Public License for more details.
 #include "cl_entity.h"
 #include "render_api.h"
 #include "protocol.h"
-#include "dlight.h"
 #include "gl_frustum.h"
 #include "ref_api.h"
 #include "xash3d_mathlib.h"
 #include "ref_params.h"
 #include "enginefeatures.h"
 #include "com_strings.h"
-#include "pm_movevars.h"
 #include "cvardef.h"
 #include "gl_export.h"
 #include "wadfile.h"
 #include "common/mod_local.h"
+#include "pmove.h"
 
 #if XASH_PSVITA
 int VGL_ShimInit( void );
@@ -328,7 +327,7 @@ qboolean R_BeamCull( const vec3_t start, const vec3_t end, qboolean pvsOnly );
 //
 // gl_cull.c
 //
-int R_CullModel( cl_entity_t *e, const vec3_t absmin, const vec3_t absmax );
+qboolean R_CullModel( cl_entity_t *e, const vec3_t absmin, const vec3_t absmax );
 qboolean R_CullBox( const vec3_t mins, const vec3_t maxs );
 int R_CullSurface( msurface_t *surf, gl_frustum_t *frustum, uint clipflags );
 

@@ -19,7 +19,6 @@ GNU General Public License for more details.
 #include "particledef.h"
 #include "cl_tent.h"
 #include "shake.h"
-#include "hltv.h"
 #include "input.h"
 #include "server.h"
 
@@ -28,7 +27,7 @@ static void CL_ParseExtraInfo( sizebuf_t *msg )
 	string clientfallback;
 
 	Q_strncpy( clientfallback, MSG_ReadString( msg ), sizeof( clientfallback ));
-	if( COM_CheckStringEmpty( clientfallback ))
+	if( !COM_StringEmpty( clientfallback ))
 		Con_Reportf( S_ERROR "%s: TODO: add fallback directory %s!\n", __func__, clientfallback );
 
 	cls.allow_cheats = MSG_ReadByte( msg ) ? true : false;
@@ -58,12 +57,12 @@ static void CL_ParseNewMovevars( sizebuf_t *msg )
 	clgame.movevars.footsteps         = MSG_ReadByte( msg );
 	clgame.movevars.rollangle         = MSG_ReadFloat( msg );
 	clgame.movevars.rollspeed         = MSG_ReadFloat( msg );
-	clgame.movevars.skycolor_r        = MSG_ReadFloat( msg );
-	clgame.movevars.skycolor_g        = MSG_ReadFloat( msg );
-	clgame.movevars.skycolor_b        = MSG_ReadFloat( msg );
-	clgame.movevars.skyvec_x          = MSG_ReadFloat( msg );
-	clgame.movevars.skyvec_y          = MSG_ReadFloat( msg );
-	clgame.movevars.skyvec_z          = MSG_ReadFloat( msg );
+	clgame.movevars.skycolor[0]       = MSG_ReadFloat( msg );
+	clgame.movevars.skycolor[1]       = MSG_ReadFloat( msg );
+	clgame.movevars.skycolor[2]       = MSG_ReadFloat( msg );
+	clgame.movevars.skyvec[0]         = MSG_ReadFloat( msg );
+	clgame.movevars.skyvec[1]         = MSG_ReadFloat( msg );
+	clgame.movevars.skyvec[2]         = MSG_ReadFloat( msg );
 
 	Q_strncpy( clgame.movevars.skyName, MSG_ReadString( msg ), sizeof( clgame.movevars.skyName ));
 
@@ -589,7 +588,7 @@ void CL_ParseGoldSrcServerMessage( sizebuf_t *msg )
 			break;
 		case svc_disconnect:
 			s = MSG_ReadString( msg );
-			if( COM_CheckStringEmpty( s ))
+			if( !COM_StringEmpty( s ))
 				Con_Printf( "Server issued disconnect. Reason: %s\n", s );
 			CL_Drop ();
 			Host_AbortCurrentFrame ();

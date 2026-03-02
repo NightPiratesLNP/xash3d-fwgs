@@ -19,8 +19,8 @@ GNU General Public License for more details.
 #include "particledef.h"
 #include "cl_tent.h"
 #include "shake.h"
-#include "hltv.h"
 #include "input.h"
+#include "base_cmd.h"
 
 enum {
 	STAT_HEALTH = 0,
@@ -266,7 +266,7 @@ static void CL_ParseQuakeServerInfo( sizebuf_t *msg )
 	{
 		pResName = MSG_ReadString( msg );
 
-		if( !COM_CheckString( pResName ))
+		if( COM_StringEmptyOrNULL( pResName ))
 			break; // end of list
 
 		pResource = Mem_Calloc( cls.mempool, sizeof( resource_t ));
@@ -284,7 +284,7 @@ static void CL_ParseQuakeServerInfo( sizebuf_t *msg )
 	{
 		pResName = MSG_ReadString( msg );
 
-		if( !COM_CheckString( pResName ))
+		if( COM_StringEmptyOrNULL( pResName ))
 			break; // end of list
 
 		pResource = Mem_Calloc( cls.mempool, sizeof( resource_t ));
@@ -839,7 +839,7 @@ static void CL_QuakeExecStuff( void )
 	int	argc = 0;
 
 	// check if no commands this frame
-	if( !COM_CheckString( text ))
+	if( COM_StringEmptyOrNULL( text ))
 		return;
 
 	while( 1 )
@@ -866,7 +866,13 @@ static void CL_QuakeExecStuff( void )
 		if( argc == 0 )
 		{
 			// debug: find all missed commands and cvars to add them into QWrap
-			if( !Cvar_Exists( token ) && !Cmd_Exists( token ))
+			cmdalias_t *alias;
+			cmd_t *cmd;
+			convar_t *cvar;
+
+			BaseCmd_FindAll( token, &cmd, &alias, &cvar );
+
+			if( !cvar && !cmd )
 				Con_Printf( S_WARN "'%s' is not exist\n", token );
 //			else Msg( "cmd: %s\n", token );
 
