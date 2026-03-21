@@ -128,14 +128,14 @@ static r_studio_interface_t	*pStudioDraw;
 static studio_draw_state_t	g_studio;		// global studio state
 
 // global variables
-static qboolean		m_fDoRemap;
-mstudiomodel_t		*m_pSubModel;
-mstudiobodyparts_t		*m_pBodyPart;
-player_info_t		*m_pPlayerInfo;
-studiohdr_t		*m_pStudioHeader;
-float			m_flGaitMovement;
-int			g_nTopColor, g_nBottomColor;	// remap colors
-int			g_nFaceFlags, g_nForceFaceFlags;
+static qboolean m_fDoRemap;
+static mstudiomodel_t *m_pSubModel;
+static mstudiobodyparts_t *m_pBodyPart;
+static player_info_t *m_pPlayerInfo;
+static studiohdr_t *m_pStudioHeader;
+static float m_flGaitMovement;
+static int g_nTopColor, g_nBottomColor;	// remap colors
+static int g_nFaceFlags, g_nForceFaceFlags;
 
 /*
 ====================
@@ -2860,6 +2860,9 @@ static void R_StudioSetupRenderer( int rendermode )
 	if( rendermode > kRenderTransAdd ) rendermode = 0;
 	g_studio.rendermode = bound( 0, rendermode, kRenderTransAdd );
 
+	if( g_studio.rendermode == kRenderTransAdd || g_studio.rendermode == kRenderGlow )
+		R_AllowFog( false );
+
 	pglTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 	pglDisable( GL_ALPHA_TEST );
 	pglShadeModel( GL_SMOOTH );
@@ -2885,6 +2888,9 @@ static void R_StudioRestoreRenderer( void )
 {
 	if( g_studio.rendermode != kRenderNormal )
 		pglDisable( GL_BLEND );
+
+	if( g_studio.rendermode == kRenderTransAdd || g_studio.rendermode == kRenderGlow )
+		R_AllowFog( true );
 
 	pglTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
 	pglShadeModel( GL_FLAT );
