@@ -26,11 +26,11 @@ static byte	texgammatable[256];
 static uint	lightgammatable[1024];
 static uint	lineargammatable[1024];
 static uint	screengammatable[1024];
-static CVAR_DEFINE( v_direct, "direct", "0.9", 0, "direct studio lighting" );
+static CVAR_DEFINE( v_direct, "direct", "0.9", FCVAR_PROTECTED, "direct studio lighting" );
 static CVAR_DEFINE( v_texgamma, "texgamma", "2.0", 0, "texgamma amount" );
-static CVAR_DEFINE( v_lightgamma, "lightgamma", "2.5", 0, "lightgamma amount" );
+static CVAR_DEFINE( v_lightgamma, "lightgamma", "2.5", FCVAR_FILTERABLE, "lightgamma amount" );
 static CVAR_DEFINE( v_brightness, "brightness", "0.0", FCVAR_ARCHIVE, "brightness factor" );
-static CVAR_DEFINE( v_gamma, "gamma", "2.5", FCVAR_ARCHIVE, "gamma amount" );
+static CVAR_DEFINE( v_gamma, "gamma", "3", FCVAR_ARCHIVE, "gamma amount" );
 
 static void BuildGammaTable( const float gamma, const float brightness, const float texgamma, const float lightgamma )
 {
@@ -112,11 +112,11 @@ void V_CheckGamma( void )
 	// but wasn't doing anything useful
 	// reset them into default values
 	// this might be removed after a while
-	if( v_direct.value == 1.0f || v_lightgamma.value == 1.0f )
+	/*if( v_direct.value == 1.0f || v_lightgamma.value == 1.0f )
 	{
 		Cvar_DirectSet( &v_direct, "0.9" );
 		Cvar_DirectSet( &v_lightgamma, "2.5" );
-	}
+	}*/
 
 	if( cls.scrshot_action == scrshot_envshot || cls.scrshot_action == scrshot_skyshot )
 	{
