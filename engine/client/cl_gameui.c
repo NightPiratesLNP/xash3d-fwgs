@@ -202,24 +202,6 @@ void UI_ShowConnectionWarning( void )
 	}
 }
 
-
-/*
-=================
-UI_ShowConnectionWarning
-
-show update dialog
-=================
-*/
-void UI_ShowUpdateDialog( qboolean preferStore )
-{
-	if( gameui.dllFuncs2.pfnShowUpdateDialog )
-	{
-		gameui.dllFuncs2.pfnShowUpdateDialog( preferStore );
-	}
-
-	Con_Printf( S_WARN "This version is not supported anymore. To continue, install latest engine version\n" );
-}
-
 /*
 =================
 UI_ShowConnectionWarning
@@ -1362,7 +1344,6 @@ qboolean UI_LoadProgs( void )
 	UITEXTAPI	GiveTextApi;
 	MENUAPI	GetMenuAPI;
 	string dllpath;
-	int			i;
 
 	if( gameui.hInstance ) UI_UnloadProgs();
 
