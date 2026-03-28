@@ -667,7 +667,7 @@ static void Cmd_FilterCommands( cmdbuf_t *buf )
 	if( num_filtered_commands == 0 || buf->cursize == 0 )
 		return;
 
-	filtered_text = Mem_Malloc( cmd_pool, buf->maxsize );
+	filtered_text = Mem_Malloc( cmd_pool, sizeof( buf->data ) );
 	new_size = 0;
 	text = (char *)buf->data;
 
