@@ -127,12 +127,6 @@ REFDLLS = [
 	RefDll('null', False),
 ]
 
-if 'HAVE_SYS_SYSCTL_H' in conf.env:
-	conf.multicheck(
-		check_frag(FRAGMENT_KERN_PROC % 'KERN_PROC', 'KERN_PROC and KERN_PROC_PATHNAME defines', 'HAVE_KERN_PROC'),
-		check_frag(FRAGMENT_KERN_PROC % 'KERN_PROC_ARGS', 'KERN_PROC_ARGS and KERN_PROC_PATHNAME defines', 'HAVE_KERN_PROC_ARGS'),
-	)
-
 def options(opt):
 	opt.load('reconfigure compiler_optimizations xshlib xcompile compiler_cxx compiler_c sdl2 clang_compilation_database strip_on_install waf_unit_test msvs subproject ninja')
 
