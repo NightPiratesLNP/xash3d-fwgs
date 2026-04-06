@@ -37,8 +37,6 @@ GNU General Public License for more details.
 #include "com_model.h"
 #include "com_strings.h"
 #include "crtlib.h"
-#define FSCALLBACK_OVERRIDE_MALLOC_LIKE
-#include "fscallback.h"
 #include "cvar.h"
 #include "con_nprint.h"
 #include "crclib.h"
@@ -344,6 +342,9 @@ typedef struct host_parm_s
 	string   gamedll;
 	string   clientlib;
 	string   menulib;
+
+	// default game directory, passed to us from game launcher
+	string default_gamedir;
 } host_parm_t;
 
 extern host_parm_t	host;
@@ -380,6 +381,10 @@ void Mem_Stats_f( void );
 #define Mem_Calloc( pool, size ) _Mem_Alloc( pool, size, true, __FILE__, __LINE__ )
 #define Mem_Realloc( pool, ptr, size ) _Mem_Realloc( pool, ptr, size, true, __FILE__, __LINE__ )
 #define Mem_Free( mem ) _Mem_Free( mem, __FILE__, __LINE__ )
+#define Mem_Free2( ptr ) { \
+	_Mem_Free( *ptr, __FILE__, __LINE__ ); \
+	*ptr = NULL; }
+
 #define Mem_AllocPool( name ) _Mem_AllocPool( name, __FILE__, __LINE__ )
 #define Mem_FreePool( pool ) _Mem_FreePool( pool, __FILE__, __LINE__ )
 #define Mem_EmptyPool( pool ) _Mem_EmptyPool( pool, __FILE__, __LINE__ )
@@ -389,7 +394,7 @@ void Mem_Stats_f( void );
 //
 // filesystem_engine.c
 //
-void FS_Init( const char *basedir );
+void FS_Init( void );
 void FS_Shutdown( void );
 void *FS_GetNativeObject( const char *obj );
 int FS_Close( file_t *file );
