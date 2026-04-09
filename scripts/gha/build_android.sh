@@ -4,7 +4,7 @@ unset ANDROID_SDK_ROOT
 export JAVA_HOME=$GITHUB_WORKSPACE/java
 export ANDROID_HOME=$GITHUB_WORKSPACE/sdk
 export PATH=$PATH:$JAVA_HOME/bin:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/tools/bin
-
+export ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME
 pushd android || exit 1
 
 ./gradlew assembleContinuous --no-daemon || exit 1
