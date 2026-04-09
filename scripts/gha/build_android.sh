@@ -7,8 +7,8 @@ export PATH=$PATH:$JAVA_HOME/bin:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$AN
 
 pushd android || exit 1
 
-./gradlew assembleContinuous --no-daemon || exit 1
-
+# ./gradlew assembleContinuous --no-daemon || exit 1
+./gradlew assembleContinuous --no-daemon --debug --stacktrace || exit 1
 pushd app/build/outputs/apk/continuous || exit 1
 
 "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
