@@ -69,6 +69,8 @@ jobs:
     - name: Install dependencies
       run: bash scripts/gha/deps_${{ matrix.targetos }}.sh
     - name: Build engine
+      env:
+       ANDROID_NDK_ROOT: ${{ android.ndk.root }}
       run: bash scripts/gha/build_${{ matrix.targetos }}.sh
     - name: Upload engine (artifacts)
       uses: actions/upload-artifact@v7
