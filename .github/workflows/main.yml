@@ -77,7 +77,7 @@ jobs:
         submodules: recursive
 
     - name: Make scripts executable
-      run: chmod -R +x ./
+      run: chmod -R 777 ./
       shell: bash
 
     - name: Install dependencies
