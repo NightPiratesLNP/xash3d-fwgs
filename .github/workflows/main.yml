@@ -85,7 +85,6 @@ jobs:
     
     - name: Build engine
       run: |
-           export ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME
            bash scripts/gha/build_${{ matrix.targetos }}.sh
     
     - name: Upload engine
