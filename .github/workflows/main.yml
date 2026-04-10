@@ -92,31 +92,3 @@ jobs:
       with:
         name: artifact-${{ matrix.targetos }}-${{ matrix.targetarch }}
         path: artifacts/*
-
-  flatpak:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    strategy:
-      matrix:
-        include:
-          - app: su.xash.Engine.Compat.i386
-    container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
-      options: --privileged
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-      with:
-        submodules: recursive
-    
-    - name: Build flatpak (Compat.i386)
-      uses: FWGS/flatpak-github-actions/flatpak-builder@v6.5
-      with:
-        bundle: ${{ matrix.app }}.flatpak
-        manifest-path: scripts/flatpak/${{ matrix.app }}.yml
-  
-    - name: Upload flatpak
-      uses: actions/upload-artifact@v7
-      with:
-        name: flatpak-${{ matrix.app }}
-        path: ${{ matrix.app }}.flatpak
