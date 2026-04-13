@@ -40,7 +40,6 @@ static vec2_t		world_orthohalf;
 static uint		r_blocklights[BLOCK_SIZE_MAX*BLOCK_SIZE_MAX*3];
 static mextrasurf_t		*fullbright_surfaces[MAX_TEXTURES];
 static mextrasurf_t		*detail_surfaces[MAX_TEXTURES];
-static int		rtable[MOD_FRAMES][MOD_FRAMES];
 
 typedef struct
 {
@@ -576,7 +575,7 @@ static void R_AddDynamicLights( const msurface_t *surf )
 		if( !FBitSet( surf->dlightbits, BIT( lnum )))
 			continue;	// not lit by this light
 
-		dl = &tr.dlights[lnum];
+		dl = &gp_dlights[lnum];
 
 		// transform light origin to local bmodel space
 		if( !tr.modelviewIdentity )
@@ -635,21 +634,6 @@ static void R_AddDynamicLights( const msurface_t *surf )
 				}
 			}
 		}
-	}
-}
-
-/*
-================
-R_SetCacheState
-================
-*/
-static void R_SetCacheState( msurface_t *surf )
-{
-	int	maps;
-
-	for( maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++ )
-	{
-		surf->cached_light[maps] = tr.lightstylevalue[surf->styles[maps]];
 	}
 }
 
@@ -783,7 +767,7 @@ static void R_BuildLightMap( const msurface_t *surf, byte *dest, int stride, qbo
 		if( surf->styles[map] >= 255 )
 			break;
 
-		scale = tr.lightstylevalue[surf->styles[map]];
+		scale = g_lightstylevalue[surf->styles[map]];
 
 		for( i = 0; i < size; i++ )
 		{
@@ -960,7 +944,7 @@ EmitWaterPolys
 Does a water warp on the pre-fragmented glpoly_t chain
 =============
 */
-void EmitWaterPolys( msurface_t *warp, qboolean reverse, qboolean ripples )
+static void EmitWaterPolys( msurface_t *warp, qboolean reverse, qboolean ripples )
 {
 	float	*v, nv, waveHeight;
 	float	s, t, os, ot;
@@ -1398,7 +1382,7 @@ static qboolean R_CheckLightMap( msurface_t *fa )
 	// check for light styles
 	for( maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++ )
 	{
-		if( tr.lightstylevalue[fa->styles[maps]] == fa->cached_light[maps] )
+		if( g_lightstylevalue[fa->styles[maps]] == fa->cached_light[maps] )
 			continue;
 
 		const int style = fa->styles[maps];
@@ -1423,7 +1407,7 @@ static qboolean R_CheckLightMap( msurface_t *fa )
 			//Host_MapDesignError( "%s: bad surface extents: %d %d", __func__, fa->extents[0], fa->extents[1] );
 		}
 
-		R_SetCacheState( fa );
+		R_UpdateSurfaceCachedLight( fa );
 
 #if XASH_WES
 		GL_Bind( XASH_TEXTURE1, tr.lightmapTextures[fa->lightmaptexturenum] );
@@ -1858,20 +1842,7 @@ void R_DrawBrushModel( cl_entity_t *e )
 	e->visframe = tr.realframecount; // visible
 
 	// calculate dynamic lighting for bmodel
-	for( int k = 0; k < MAX_DLIGHTS; k++ )
-	{
-		dlight_t *l = &tr.dlights[k];
-		vec3_t origin_l, oldorigin;
-
-		if( l->die < gp_cl->time || !l->radius )
-			continue;
-
-		VectorCopy( l->origin, oldorigin ); // save lightorigin
-		Matrix4x4_VectorITransform( RI.objectMatrix, l->origin, origin_l );
-		VectorCopy( origin_l, l->origin ); // move light in bmodel space
-		R_MarkLights( l, 1<<k, clmodel->nodes + clmodel->hulls[0].firstclipnode );
-		VectorCopy( oldorigin, l->origin ); // restore lightorigin
-	}
+	R_PushDlightsForBmodel( clmodel, tr.dlightframecount, RI.objectMatrix );
 
 	// setup the rendermode
 	R_SetRenderMode( e );
@@ -3872,7 +3843,7 @@ static void GL_CreateSurfaceLightmap( msurface_t *surf, model_t *loadmodel )
 	base = gl_lms.lightmap_buffer;
 	base += ( surf->light_t * BLOCK_SIZE + surf->light_s ) * 4;
 
-	R_SetCacheState( surf );
+	R_UpdateSurfaceCachedLight( surf );
 	R_BuildLightMap( surf, base, BLOCK_SIZE * 4, false );
 }
 
@@ -4008,17 +3979,3 @@ void GL_BuildLightmaps( void )
 	}
 }
 
-void GL_InitRandomTable( void )
-{
-	int	tu, tv;
-
-	for( tu = 0; tu < MOD_FRAMES; tu++ )
-	{
-		for( tv = 0; tv < MOD_FRAMES; tv++ )
-		{
-			rtable[tu][tv] = gEngfuncs.COM_RandomLong( 0, 0x7FFF );
-		}
-	}
-
-	gEngfuncs.COM_SetRandomSeed( 0 );
-}

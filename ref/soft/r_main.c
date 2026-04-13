@@ -71,7 +71,6 @@ CVAR_DEFINE_AUTO( sw_texfilt, "0", FCVAR_GLCONFIG, "texture dither" );
 static CVAR_DEFINE_AUTO( r_novis, "0", 0, "" );
 
 
-DEFINE_ENGINE_SHARED_CVAR_LIST()
 
 int r_viewcluster, r_oldviewcluster;
 
@@ -319,9 +318,6 @@ qboolean GAME_EXPORT R_AddEntity( struct cl_entity_s *clent, int type )
 	if( !r_drawentities->value )
 		return false; // not allow to drawing
 
-	if( !clent || !clent->model )
-		return false; // if set to invisible, skip
-
 	if( FBitSet( clent->curstate.effects, EF_NODRAW ))
 		return false; // done
 
@@ -331,7 +327,20 @@ qboolean GAME_EXPORT R_AddEntity( struct cl_entity_s *clent, int type )
 	if( type == ET_FRAGMENTED )
 		r_stats.c_client_ents++;
 
-	if( R_OpaqueEntity( clent ))
+	if( type == ET_BEAM )
+	{
+		if( tr.draw_list->num_beam_entities >= MAX_VISIBLE_PACKET )
+		{
+			gEngfuncs.Con_Printf( S_ERROR "Too many beams %d!\n", tr.draw_list->num_beam_entities );
+			return false;
+		}
+
+		tr.draw_list->beam_entities[tr.draw_list->num_beam_entities] = clent;
+		tr.draw_list->num_beam_entities++;
+
+		return true;
+	}
+	else if( R_OpaqueEntity( clent ))
 	{
 		if( clent->model->type == mod_brush )
 		{
@@ -831,21 +840,8 @@ static void R_DrawBEntitiesOnList( void )
 		R_RotateBmodel();
 
 		// calculate dynamic lighting for bmodel
-		for( k = 0; k < MAX_DLIGHTS; k++ )
-		{
-			dlight_t *l = &tr.dlights[k];
-			vec3_t   origin_l, oldorigin;
-
-			if( l->die < gp_cl->time || !l->radius )
-				continue;
-
-			VectorCopy( l->origin, oldorigin ); // save lightorigin
-			Matrix4x4_CreateFromEntity( RI.objectMatrix, RI.currententity->angles, RI.currententity->origin, 1 );
-			Matrix4x4_VectorITransform( RI.objectMatrix, l->origin, origin_l );
-			VectorCopy( origin_l, l->origin ); // move light in bmodel space
-			R_MarkLights( l, 1 << k, RI.currentmodel->nodes + RI.currentmodel->hulls[0].firstclipnode );
-			VectorCopy( oldorigin, l->origin ); // restore lightorigin
-		}
+		Matrix4x4_CreateFromEntity( RI.objectMatrix, RI.currententity->angles, RI.currententity->origin, 1 );
+		R_PushDlightsForBmodel( RI.currentmodel, tr.dlightframecount, RI.objectMatrix );
 
 		RI.currententity->topnode = topnode;
 		if( topnode->contents >= 0 )
@@ -956,22 +952,9 @@ void R_DrawBrushModel( cl_entity_t *pent )
 	R_RotateBmodel();
 
 	// calculate dynamic lighting for bmodel
-	for( k = 0; k < MAX_DLIGHTS; k++ )
-	{
-		dlight_t *l = &tr.dlights[k];
-		vec3_t   origin_l, oldorigin;
-
-		if( l->die < gp_cl->time || !l->radius )
-			continue;
-
-		VectorCopy( l->origin, oldorigin );         // save lightorigin
-		Matrix4x4_CreateFromEntity( RI.objectMatrix, RI.currententity->angles, RI.currententity->origin, 1 );
-		Matrix4x4_VectorITransform( RI.objectMatrix, l->origin, origin_l );
-		tr.modelviewIdentity = false;
-		VectorCopy( origin_l, l->origin );         // move light in bmodel space
-		R_MarkLights( l, 1 << k, RI.currentmodel->nodes + RI.currentmodel->hulls[0].firstclipnode );
-		VectorCopy( oldorigin, l->origin );         // restore lightorigin*/
-	}
+	Matrix4x4_CreateFromEntity( RI.objectMatrix, RI.currententity->angles, RI.currententity->origin, 1 );
+	R_PushDlightsForBmodel( RI.currentmodel, tr.dlightframecount, RI.objectMatrix );
+	tr.modelviewIdentity = false;
 
 	RI.currententity->topnode = topnode;
 	if( topnode->contents >= 0 )
@@ -1121,7 +1104,7 @@ void GAME_EXPORT R_RenderScene( void )
 	R_SetupFrustum();
 	R_SetupFrame();
 
-	R_PushDlights();
+	tr.dlightframecount = R_PushDlights( WORLDMODEL, tr.framecount );
 	R_SetupModelviewMatrix( RI.worldviewMatrix );
 	R_SetupProjectionMatrix( RI.projectionMatrix );
 
@@ -1397,9 +1380,6 @@ qboolean GAME_EXPORT R_Init( void )
 {
 	qboolean glblit = false;
 
-	RETRIEVE_ENGINE_SHARED_CVAR_LIST();
-
-
 	gEngfuncs.Cvar_RegisterVariable( &sw_clearcolor );
 	gEngfuncs.Cvar_RegisterVariable( &sw_drawflat );
 	gEngfuncs.Cvar_RegisterVariable( &sw_draworder );
@@ -1444,8 +1424,7 @@ qboolean GAME_EXPORT R_Init( void )
 	tr.lightgammatable = (uint *)ENGINE_GET_PARM( PARM_GET_LIGHTGAMMATABLE_PTR );
 	tr.screengammatable = (uint *)ENGINE_GET_PARM( PARM_GET_SCREENGAMMATABLE_PTR );
 	tr.lineargammatable = (uint *)ENGINE_GET_PARM( PARM_GET_LINEARGAMMATABLE_PTR );
-	tr.dlights = (dlight_t *)ENGINE_GET_PARM( PARM_GET_DLIGHTS_PTR );
-	tr.elights = (dlight_t *)ENGINE_GET_PARM( PARM_GET_ELIGHTS_PTR );
+		tr.elights = (dlight_t *)ENGINE_GET_PARM( PARM_GET_ELIGHTS_PTR );
 
 	if( !R_InitBlit( glblit ))
 	{
@@ -1462,7 +1441,6 @@ qboolean GAME_EXPORT R_Init( void )
 	qfrustum.view_clipplanes[1].leftedge = qfrustum.view_clipplanes[2].leftedge = qfrustum.view_clipplanes[3].leftedge = false;
 	qfrustum.view_clipplanes[0].rightedge = qfrustum.view_clipplanes[2].rightedge = qfrustum.view_clipplanes[3].rightedge = false;
 	R_StudioInit();
-	R_SpriteInit();
 	R_InitTurb();
 	GL_InitRandomTable();
 
